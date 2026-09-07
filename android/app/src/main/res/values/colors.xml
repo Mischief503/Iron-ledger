@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Iron Ledger brand palette (matches the "Chalk & Iron" default theme) -->
+    <color name="colorPrimary">#211D17</color>
+    <color name="colorPrimaryDark">#17140F</color>
+    <color name="colorAccent">#C9441E</color>
+</resources>

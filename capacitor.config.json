@@ -1,0 +1,9 @@
+{
+  "appId": "com.mischief503.ironledger",
+  "appName": "Iron Ledger",
+  "webDir": "www",
+  "backgroundColor": "#EDE7DB",
+  "android": {
+    "backgroundColor": "#EDE7DB"
+  }
+}

@@ -1,0 +1,1867 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#EDE7DB">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Iron Ledger</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');
+
+  :root {
+    --bg: #EDE7DB;
+    --surface: #FAF7F0;
+    --surface-2: #E4DCC9;
+    --ink: #211D17;
+    --ink-dim: #6E6656;
+    --line: rgba(33,29,23,0.14);
+    --accent: #C9441E;
+    --accent-ink: #FFF7EE;
+    --good: #3C7A4B;
+    --good-bg: rgba(60,122,75,0.14);
+    --shadow: 0 2px 6px rgba(33,29,23,0.05), 0 14px 30px -16px rgba(33,29,23,0.24);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17140F; --surface: #211C15; --surface-2: #2B241A; --ink: #F2ECDD; --ink-dim: #9C927D;
+      --line: rgba(242,236,221,0.12); --accent: #FF6A38; --accent-ink: #1A0D06; --good: #6FBE7E; --good-bg: rgba(111,190,126,0.16);
+      --shadow: 0 2px 6px rgba(0,0,0,0.35), 0 16px 34px -16px rgba(0,0,0,0.55);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17140F; --surface: #211C15; --surface-2: #2B241A; --ink: #F2ECDD; --ink-dim: #9C927D;
+    --line: rgba(242,236,221,0.12); --accent: #FF6A38; --accent-ink: #1A0D06; --good: #6FBE7E; --good-bg: rgba(111,190,126,0.16);
+    --shadow: 0 2px 6px rgba(0,0,0,0.35), 0 16px 34px -16px rgba(0,0,0,0.55);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .lang-ja body { font-family: 'Archivo', 'Noto Sans JP', sans-serif; }
+  .lang-zh body { font-family: 'Archivo', 'Noto Sans SC', sans-serif; }
+  body.lang-ja, body.lang-zh { font-family: 'Archivo', 'Noto Sans JP', 'Noto Sans SC', sans-serif; }
+
+  .display { font-family: 'Bebas Neue', 'Archivo Narrow', sans-serif; letter-spacing: 0.02em; }
+  .mono { font-family: 'IBM Plex Mono', 'SFMono-Regular', monospace; font-variant-numeric: tabular-nums; }
+  a { color: inherit; }
+
+  .wrap { max-width: 720px; margin: 0 auto; padding: 20px 20px 24px; }
+
+  /* ---------- Header ---------- */
+  .topbar {
+    position: sticky; top: 0; z-index: 5; background: var(--bg);
+    padding: 18px 0 16px; display: flex; align-items: center; justify-content: space-between;
+    gap: 14px; border-bottom: 1px solid var(--line); margin-bottom: 22px;
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; flex-shrink: 0; }
+  .brand .mark {
+    width: 10px; height: 26px; background: var(--accent); border-radius: 2px;
+    transform: skewX(-12deg); display: inline-block; position: relative; top: 3px;
+  }
+  h1.brand-name { font-size: 30px; line-height: 1; margin: 0; font-weight: 400; white-space: nowrap; }
+
+  .today-stats {
+    display: flex; gap: 2px; flex-shrink: 1; min-width: 0; overflow: hidden;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px 4px;
+  }
+  .stat { text-align: center; padding: 0 12px; position: relative; min-width: 0; }
+  .stat + .stat::before {
+    content: ""; position: absolute; left: 0; top: 3px; bottom: 3px; width: 1px; background: var(--line);
+  }
+  .stat .num { font-family: 'Bebas Neue', sans-serif; font-size: 22px; line-height: 1; color: var(--accent); }
+  .stat .lbl { font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-dim); margin-top: 3px; }
+
+  /* ---------- Tab views ---------- */
+  .view { display: none; }
+  .view.active { display: block; animation: viewIn 0.15s ease-out; }
+  @keyframes viewIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { .view.active { animation: none; } }
+
+  /* ---------- Bottom tab bar ---------- */
+  .tabbar-space { height: 82px; }
+  .tabbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
+    display: flex; background: var(--surface); border-top: 1px solid var(--line);
+    box-shadow: 0 -6px 20px -10px rgba(0,0,0,0.2);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .tabbar-inner { max-width: 720px; margin: 0 auto; display: flex; width: 100%; }
+  .tab-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;
+    background: none; border: none; padding: 10px 4px 8px; color: var(--ink-dim); cursor: pointer;
+    font-family: 'Archivo', sans-serif; font-weight: 600; font-size: 10.5px;
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .tab-btn .icon-wrap {
+    width: 46px; height: 28px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .tab-btn.active .icon-wrap { background: var(--surface-2); }
+  .tab-btn svg { width: 21px; height: 21px; }
+  .tab-btn.active { color: var(--accent); }
+  .tab-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+  /* ---------- Section headers ---------- */
+  .eyebrow {
+    font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 0.14em; color: var(--ink-dim);
+    margin: 0 0 10px; display: flex; align-items: center; gap: 8px; white-space: nowrap;
+  }
+  .eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--line); min-width: 12px; }
+
+  /* ---------- Panels ---------- */
+  .panel {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+    padding: 18px; box-shadow: var(--shadow); margin-bottom: 26px;
+  }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .chip {
+    font-family: 'Archivo', sans-serif; font-weight: 600; font-size: 13px; padding: 8px 14px;
+    border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink);
+    cursor: pointer; transition: background 0.12s, color 0.12s, border-color 0.12s; line-height: 1;
+  }
+  .chip:hover { border-color: var(--accent); }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+  .custom-exercise { display: none; margin-bottom: 14px; }
+  .custom-exercise.show { display: block; }
+  .custom-exercise input {
+    width: 100%; font: inherit; font-weight: 600; padding: 11px 13px; border-radius: 10px;
+    border: 1px solid var(--line); background: var(--surface-2); color: var(--ink);
+  }
+
+  .entry-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .field label {
+    display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-dim); margin-bottom: 6px;
+  }
+  .field input[type="number"] {
+    width: 100%; font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 500;
+    padding: 11px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2);
+    color: var(--ink); font-variant-numeric: tabular-nums;
+  }
+  .field input:disabled { opacity: 0.5; }
+  .field input:focus, .custom-exercise input:focus, .chip:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 1px;
+  }
+
+  .unit-toggle { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .unit-toggle button {
+    flex: 1; border: none; background: var(--surface-2); color: var(--ink-dim);
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; padding: 11px 0; cursor: pointer;
+  }
+  .unit-toggle button.active { background: var(--ink); color: var(--surface); }
+
+  .log-btn-full {
+    width: 100%; margin-top: 12px; background: var(--accent); color: var(--accent-ink); border: none;
+    border-radius: 12px; font-family: 'Bebas Neue', sans-serif; font-size: 21px; letter-spacing: 0.05em;
+    height: 54px; cursor: pointer;
+  }
+  .log-btn-full:hover { filter: brightness(1.06); }
+  .log-btn-full:active { filter: brightness(0.94); }
+
+  .bw-check {
+    display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--ink-dim);
+    margin-top: 14px; cursor: pointer; user-select: none;
+  }
+  .bw-check input { accent-color: var(--accent); width: 14px; height: 14px; }
+
+  /* ---------- Panel head / mode toggle ---------- */
+  .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .panel-head .eyebrow { margin-bottom: 0; flex: 1; }
+  .mode-toggles { display: flex; gap: 8px; }
+  .mode-toggle {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 11.5px; letter-spacing: 0.03em;
+    text-transform: uppercase; padding: 7px 13px; border-radius: 999px; border: 1px solid var(--line);
+    background: var(--surface-2); color: var(--ink-dim); cursor: pointer; white-space: nowrap;
+  }
+  .mode-toggle svg { width: 13px; height: 13px; }
+  .mode-toggle.active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+  .mode-config {
+    display: none; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px; margin-bottom: 14px;
+  }
+  .mode-config.show { display: block; }
+  .mode-config .subhead { font-size: 11px; color: var(--ink-dim); margin: 0 0 10px; line-height: 1.5; }
+  .mode-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 8px; margin-bottom: 12px; }
+  .mode-grid .field label { font-size: 9px; }
+  .mode-grid .field input {
+    width: 100%; font-family: 'IBM Plex Mono', monospace; font-size: 14px; padding: 8px 8px;
+    border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  }
+  .mode-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .mode-btn {
+    font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 12px; padding: 8px 14px;
+    border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer;
+  }
+  .mode-btn.primary { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+  .mode-status { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: var(--ink-dim); }
+  .mode-status b { color: var(--accent); }
+
+  /* ---------- Rest config + timer ---------- */
+  .rest-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .rest-row .rlabel { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-dim); margin-right: 2px; }
+  .rest-chip {
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 500; padding: 6px 11px;
+    border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); cursor: pointer;
+  }
+  .rest-chip.active { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+  .rest-custom { display: flex; align-items: center; gap: 5px; }
+  .rest-custom input {
+    width: 54px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding: 6px 7px;
+    border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink);
+  }
+  .rest-custom span { font-size: 11px; color: var(--ink-dim); }
+
+  .timer-card {
+    display: none; align-items: center; gap: 18px; background: var(--surface-2); border: 1px solid var(--line);
+    border-radius: 14px; padding: 16px; margin-top: 14px;
+  }
+  .timer-card.show { display: flex; }
+  .timer-card.warn { border-color: var(--accent); }
+
+  @keyframes ledgerPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(201,68,30,0.35); }
+    50% { box-shadow: 0 0 0 8px rgba(201,68,30,0); }
+  }
+  .timer-card.over { border-color: var(--accent); animation: ledgerPulse 1.1s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { .timer-card.over { animation: none; } }
+
+  .timer-ring {
+    width: 84px; height: 84px; border-radius: 50%; flex-shrink: 0;
+    background: conic-gradient(var(--accent) calc(var(--pct, 100) * 1%), var(--line) 0);
+  }
+  .timer-ring-inner {
+    width: 100%; height: 100%; border-radius: 50%; background: var(--surface-2);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .timer-count { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--ink); line-height: 1; }
+  .timer-card.warn .timer-count, .timer-card.over .timer-count { color: var(--accent); }
+
+  .timer-mid { flex: 1; min-width: 0; }
+  .timer-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-dim); margin-bottom: 10px; line-height: 1.4; }
+  .timer-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .timer-actions button {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; padding: 8px 11px;
+    border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+    cursor: pointer; white-space: nowrap;
+  }
+  .timer-actions button.done-btn { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+  /* ---------- Session tally ---------- */
+  .session-strip { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); }
+  .session-strip.empty { display: none; }
+  .set-pill { display: flex; align-items: center; gap: 7px; background: var(--surface-2); border-radius: 999px; padding: 6px 10px 6px 12px; font-size: 12px; }
+  .set-pill .ex { font-weight: 600; }
+  .set-pill .vals { font-family: 'IBM Plex Mono', monospace; color: var(--ink-dim); }
+  .set-pill .rest, .set-chip .rest { font-family: 'IBM Plex Mono', monospace; color: var(--ink-dim); opacity: 0.75; }
+  .set-pill .rest::before, .set-chip .rest::before { content: "\21bb "; }
+  .set-pill .pr { background: var(--good-bg); color: var(--good); font-weight: 700; font-size: 9px; letter-spacing: 0.05em; padding: 2px 5px; border-radius: 4px; }
+  .set-pill .del { border: none; background: transparent; color: var(--ink-dim); cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px; }
+  .set-pill .del:hover { color: var(--accent); }
+
+  /* ---------- Calendar (History) ---------- */
+  .cal-card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); margin-bottom: 18px; }
+  .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 8px; }
+  .cal-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.03em; flex: 1; text-align: center; }
+  .cal-nav-btn, .cal-today-btn {
+    border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cal-nav-btn { width: 32px; height: 32px; border-radius: 50%; }
+  .cal-nav-btn svg { width: 16px; height: 16px; }
+  .cal-today-btn {
+    font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 10.5px; text-transform: uppercase;
+    letter-spacing: 0.05em; padding: 0 12px; height: 32px; border-radius: 999px;
+  }
+  .cal-dow-row { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 6px; }
+  .cal-dow { text-align: center; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-dim); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-day {
+    aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; border-radius: 10px; cursor: pointer; background: transparent; border: 1px solid transparent;
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--ink);
+  }
+  .cal-day.empty { visibility: hidden; cursor: default; }
+  .cal-day:not(.empty):hover { border-color: var(--line); }
+  .cal-day.today { border-color: var(--ink-dim); }
+  .cal-day.has-data { font-weight: 700; }
+  .cal-day .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+  .cal-day.selected { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .cal-day.selected .dot { background: var(--accent-ink); }
+
+  .day-detail { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); }
+  .day-detail-head { display: flex; justify-content: space-between; align-items: center; padding: 15px 18px; flex-wrap: wrap; gap: 8px; }
+  .day-detail-head .date { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.02em; }
+  .day-detail-head .date .rel {
+    font-family: 'Archivo', sans-serif; font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--ink-dim); margin-left: 8px; vertical-align: 2px;
+  }
+  .day-totals { display: flex; gap: 14px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink-dim); white-space: nowrap; }
+  .day-totals b { color: var(--ink); font-weight: 600; }
+  .day-detail-body { border-top: 1px solid var(--line); padding: 4px 18px 14px; }
+  .ex-group { padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .ex-group:last-child { border-bottom: none; }
+  .ex-name { font-weight: 700; font-size: 13.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .ex-name .best { font-family: 'IBM Plex Mono', monospace; font-weight: 500; font-size: 11px; color: var(--ink-dim); }
+  .set-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .set-chip { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: var(--surface-2); padding: 4px 9px; border-radius: 7px; display: inline-flex; align-items: center; gap: 5px; }
+  .set-chip.pr { background: var(--good-bg); color: var(--good); font-weight: 600; }
+  .day-empty { text-align: center; color: var(--ink-dim); padding: 34px 20px; font-size: 13.5px; }
+
+  .sync-note { text-align: center; font-size: 11px; color: var(--ink-dim); margin-top: 18px; }
+
+  /* ---------- Settings ---------- */
+  .settings-block { margin-bottom: 30px; }
+  .lang-grid, .theme-grid { display: grid; gap: 10px; }
+  .lang-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+  .theme-grid { grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); }
+  .lang-card, .theme-card {
+    border: 1.5px solid var(--line); border-radius: 12px; background: var(--surface); cursor: pointer;
+    text-align: left; padding: 12px; font-family: 'Archivo', sans-serif; color: var(--ink);
+  }
+  .lang-card { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .lang-card .native { font-weight: 600; font-size: 13.5px; }
+  .lang-card .check, .theme-card .check { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--line); flex-shrink: 0; }
+  .lang-card.selected, .theme-card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .lang-card.selected .check, .theme-card.selected .check { background: var(--accent); border-color: var(--accent); position: relative; }
+  .lang-card.selected .check::after, .theme-card.selected .check::after {
+    content: ""; position: absolute; left: 4px; top: 1px; width: 4px; height: 8px;
+    border: solid var(--accent-ink); border-width: 0 2px 2px 0; transform: rotate(45deg);
+  }
+  .theme-card { padding: 10px; }
+  .theme-swatch { height: 40px; border-radius: 8px; display: flex; overflow: hidden; margin-bottom: 8px; border: 1px solid var(--line); }
+  .theme-swatch span { flex: 1; }
+  .theme-card .tname { font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .auto-card { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; }
+  .auto-card .native { font-weight: 600; font-size: 13.5px; }
+
+  .settings-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .settings-toggle-row:last-child { border-bottom: none; }
+  .settings-toggle-row .stxt { font-size: 13.5px; font-weight: 500; max-width: 440px; }
+
+  .switch { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .slider { position: absolute; inset: 0; background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; cursor: pointer; transition: background 0.15s; }
+  .switch .slider::before {
+    content: ""; position: absolute; width: 18px; height: 18px; left: 2px; top: 2px; background: var(--surface);
+    border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.25); transition: transform 0.15s;
+  }
+  .switch input:checked + .slider { background: var(--accent); border-color: var(--accent); }
+  .switch input:checked + .slider::before { transform: translateX(18px); background: var(--accent-ink); }
+
+  @media (max-width: 480px) {
+    .today-stats { gap: 0; }
+    .stat { padding: 0 8px; }
+    .day-totals { font-size: 10.5px; gap: 9px; }
+    .timer-card { flex-wrap: wrap; }
+  }
+  @media (max-width: 360px) {
+    h1.brand-name { font-size: 24px; }
+    .stat { padding: 0 6px; }
+    .stat .num { font-size: 19px; }
+  }
+
+  /* =====================================================================
+     Named color themes — picked in Settings. Placed last so they win the
+     cascade over the default light/dark + platform data-theme blocks
+     above, regardless of the viewer's OS color scheme.
+     ===================================================================== */
+  :root[data-palette="chalk-iron"] {
+    --bg:#EDE7DB; --surface:#FAF7F0; --surface-2:#E4DCC9; --ink:#211D17; --ink-dim:#6E6656;
+    --line: rgba(33,29,23,0.14); --accent:#C9441E; --accent-ink:#FFF7EE; --good:#3C7A4B; --good-bg: rgba(60,122,75,0.14);
+    --shadow: 0 2px 6px rgba(33,29,23,0.05), 0 14px 30px -16px rgba(33,29,23,0.24);
+  }
+  :root[data-palette="iron-night"] {
+    --bg:#17140F; --surface:#211C15; --surface-2:#2B241A; --ink:#F2ECDD; --ink-dim:#9C927D;
+    --line: rgba(242,236,221,0.12); --accent:#FF6A38; --accent-ink:#1A0D06; --good:#6FBE7E; --good-bg: rgba(111,190,126,0.16);
+    --shadow: 0 2px 6px rgba(0,0,0,0.35), 0 16px 34px -16px rgba(0,0,0,0.55);
+  }
+  :root[data-palette="steel-blue"] {
+    --bg:#171B1F; --surface:#1F252B; --surface-2:#29313A; --ink:#E7EDF2; --ink-dim:#8CA0AF;
+    --line: rgba(231,237,242,0.12); --accent:#3FA9E0; --accent-ink:#06171F; --good:#57C48A; --good-bg: rgba(87,196,138,0.15);
+    --shadow: 0 2px 6px rgba(0,0,0,0.35), 0 16px 34px -16px rgba(0,0,0,0.55);
+  }
+  :root[data-palette="crimson-gym"] {
+    --bg:#17100F; --surface:#201715; --surface-2:#2B1E1B; --ink:#F3E9E6; --ink-dim:#A68F8A;
+    --line: rgba(243,233,230,0.12); --accent:#E23B3B; --accent-ink:#FFF3F0; --good:#5FBE71; --good-bg: rgba(95,190,113,0.15);
+    --shadow: 0 2px 6px rgba(0,0,0,0.35), 0 16px 34px -16px rgba(0,0,0,0.55);
+  }
+  :root[data-palette="deep-forest"] {
+    --bg:#10160F; --surface:#171F15; --surface-2:#202B1D; --ink:#E8EFE4; --ink-dim:#93A388;
+    --line: rgba(232,239,228,0.12); --accent:#79C24A; --accent-ink:#0B1706; --good:#4FB0C9; --good-bg: rgba(79,176,201,0.15);
+    --shadow: 0 2px 6px rgba(0,0,0,0.35), 0 16px 34px -16px rgba(0,0,0,0.55);
+  }
+  :root[data-palette="ocean-deep"] {
+    --bg:#0C1B24; --surface:#122733; --surface-2:#17323F; --ink:#E3F1F5; --ink-dim:#82A6B2;
+    --line: rgba(227,241,245,0.12); --accent:#2FBFA3; --accent-ink:#052420; --good:#8FCB5E; --good-bg: rgba(143,203,94,0.15);
+    --shadow: 0 2px 6px rgba(0,0,0,0.35), 0 16px 34px -16px rgba(0,0,0,0.55);
+  }
+  :root[data-palette="golden-hour"] {
+    --bg:#FBEEDD; --surface:#FFF8EF; --surface-2:#F3E1C4; --ink:#2B1C0E; --ink-dim:#8A7256;
+    --line: rgba(43,28,14,0.14); --accent:#D98A1F; --accent-ink:#2B1C0E; --good:#3C7A4B; --good-bg: rgba(60,122,75,0.14);
+    --shadow: 0 2px 6px rgba(43,28,14,0.05), 0 14px 30px -16px rgba(43,28,14,0.22);
+  }
+  :root[data-palette="neon-arcade"] {
+    --bg:#120E1C; --surface:#1B1530; --surface-2:#241C3D; --ink:#EDE8FB; --ink-dim:#9186B8;
+    --line: rgba(237,232,251,0.12); --accent:#33E6C7; --accent-ink:#04211C; --good:#F23DBF; --good-bg: rgba(242,61,191,0.15);
+    --shadow: 0 2px 6px rgba(0,0,0,0.35), 0 16px 34px -16px rgba(0,0,0,0.55);
+  }
+  :root[data-palette="blush"] {
+    --bg:#FBEEF0; --surface:#FFF7F8; --surface-2:#F3DEE2; --ink:#2E1A20; --ink-dim:#8E6A72;
+    --line: rgba(46,26,32,0.13); --accent:#C6416F; --accent-ink:#FFF3F6; --good:#3C7A4B; --good-bg: rgba(60,122,75,0.14);
+    --shadow: 0 2px 6px rgba(46,26,32,0.05), 0 14px 30px -16px rgba(46,26,32,0.22);
+  }
+  :root[data-palette="champion-gold"] {
+    --bg:#121212; --surface:#1B1B1B; --surface-2:#262626; --ink:#F2EEE4; --ink-dim:#A39C88;
+    --line: rgba(242,238,228,0.12); --accent:#D4AF37; --accent-ink:#1A1400; --good:#5FBE71; --good-bg: rgba(95,190,113,0.15);
+    --shadow: 0 2px 6px rgba(0,0,0,0.35), 0 16px 34px -16px rgba(0,0,0,0.55);
+  }
+  :root[data-palette="concrete"] {
+    --bg:#E9EBEC; --surface:#F5F6F7; --surface-2:#DADEE1; --ink:#1D2124; --ink-dim:#6B7378;
+    --line: rgba(29,33,36,0.13); --accent:#3B6E8F; --accent-ink:#EDF3F7; --good:#3C7A4B; --good-bg: rgba(60,122,75,0.14);
+    --shadow: 0 2px 6px rgba(29,33,36,0.05), 0 14px 30px -16px rgba(29,33,36,0.22);
+  }
+  :root[data-palette="royal-violet"] {
+    --bg:#150F1E; --surface:#1E1629; --surface-2:#281D36; --ink:#EDE7F5; --ink-dim:#9587AC;
+    --line: rgba(237,231,245,0.12); --accent:#9D5CE0; --accent-ink:#180B29; --good:#5FBE9E; --good-bg: rgba(95,190,158,0.15);
+    --shadow: 0 2px 6px rgba(0,0,0,0.35), 0 16px 34px -16px rgba(0,0,0,0.55);
+  }
+  :root[data-palette="citrus-punch"] {
+    --bg:#F3F3DE; --surface:#FBFBEF; --surface-2:#E3E2B8; --ink:#1F2410; --ink-dim:#6E7350;
+    --line: rgba(31,36,16,0.13); --accent:#7DB819; --accent-ink:#131A05; --good:#E0891F; --good-bg: rgba(224,137,31,0.15);
+    --shadow: 0 2px 6px rgba(31,36,16,0.05), 0 14px 30px -16px rgba(31,36,16,0.22);
+  }
+  :root[data-palette="midnight-ice"] {
+    --bg:#0A0E14; --surface:#10151D; --surface-2:#161D27; --ink:#E7EEF5; --ink-dim:#7C8B9C;
+    --line: rgba(231,238,245,0.12); --accent:#6FD3F0; --accent-ink:#041820; --good:#7CE0A6; --good-bg: rgba(124,224,166,0.15);
+    --shadow: 0 2px 6px rgba(0,0,0,0.35), 0 16px 34px -16px rgba(0,0,0,0.55);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"></span>
+      <h1 class="brand-name display">Iron Ledger</h1>
+    </div>
+    <div class="today-stats" id="todayStats">
+      <div class="stat"><div class="num mono" id="statSets">0</div><div class="lbl" data-i18n="lblSets">Sets</div></div>
+      <div class="stat"><div class="num mono" id="statReps">0</div><div class="lbl" data-i18n="lblReps">Reps</div></div>
+      <div class="stat"><div class="num mono" id="statVolume">0</div><div class="lbl" data-i18n="lblVolume">Volume</div></div>
+    </div>
+  </header>
+
+  <!-- ================= REPS TAB ================= -->
+  <section class="view active" id="view-reps">
+    <div class="panel">
+      <div class="panel-head">
+        <p class="eyebrow" data-i18n="eyebrowLog">LOG A SET</p>
+        <div class="mode-toggles">
+          <button type="button" class="mode-toggle" id="rampToggle">
+            <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="10" width="3" height="5"/><rect x="6.5" y="6" width="3" height="9"/><rect x="12" y="2" width="3" height="13"/></svg>
+            <span data-i18n="modeRamp">Ramp Mode</span>
+          </button>
+          <button type="button" class="mode-toggle" id="ladderToggle">
+            <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="2" width="3" height="13"/><rect x="6.5" y="6" width="3" height="9"/><rect x="12" y="10" width="3" height="5"/></svg>
+            <span data-i18n="modeLadder">Ladder Mode</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="mode-config" id="rampConfig">
+        <p class="subhead" id="rampSubhead" data-i18n="rampSubhead"></p>
+        <div class="mode-grid">
+          <div class="field"><label data-i18n="lblStartWt">Start wt</label><input type="number" id="rampStart" value="45" step="0.5"></div>
+          <div class="field"><label data-i18n="lblIncrement">+ Increment</label><input type="number" id="rampIncrement" value="5" step="0.5"></div>
+          <div class="field"><label data-i18n="lblRepsPerSet">Reps/set</label><input type="number" id="rampReps" value="30" step="1"></div>
+          <div class="field"><label data-i18n="lblSetsPerWeight">Sets/weight</label><input type="number" id="rampSetsPer" value="3" step="1"></div>
+          <div class="field"><label data-i18n="lblStopAt">Stop at</label><input type="number" id="rampTop" value="160" step="0.5"></div>
+        </div>
+        <div class="mode-actions">
+          <button type="button" class="mode-btn primary" id="rampStartBtn" data-i18n="btnStartRamp">Start Ramp</button>
+          <button type="button" class="mode-btn" id="rampResetBtn" data-i18n="btnReset">Reset</button>
+          <span class="mode-status" id="rampStatus"></span>
+        </div>
+      </div>
+
+      <div class="mode-config" id="ladderConfig">
+        <p class="subhead" id="ladderSubhead" data-i18n="ladderSubhead"></p>
+        <div class="mode-grid">
+          <div class="field"><label data-i18n="lblStartReps">Start reps</label><input type="number" id="ladderStartReps" value="15" step="1"></div>
+          <div class="field"><label data-i18n="lblRepStep">Rep step</label><input type="number" id="ladderRepStep" value="1" step="1"></div>
+          <div class="field"><label data-i18n="lblEndReps">End reps</label><input type="number" id="ladderEndReps" value="1" step="1"></div>
+          <div class="field"><label data-i18n="lblStartRest">Start rest</label><input type="number" id="ladderStartRest" value="30" step="1"></div>
+          <div class="field"><label data-i18n="lblRestStep">Rest step</label><input type="number" id="ladderRestStep" value="2" step="1"></div>
+          <div class="field"><label data-i18n="lblMinRest">Min rest</label><input type="number" id="ladderMinRest" value="0" step="1"></div>
+        </div>
+        <div class="mode-actions">
+          <button type="button" class="mode-btn primary" id="ladderStartBtn" data-i18n="btnStartLadder">Start Ladder</button>
+          <button type="button" class="mode-btn" id="ladderResetBtn" data-i18n="btnReset">Reset</button>
+          <span class="mode-status" id="ladderStatus"></span>
+        </div>
+      </div>
+
+      <div class="chips" id="exerciseChips"></div>
+
+      <div class="custom-exercise" id="customExerciseWrap">
+        <input type="text" id="customExercise" autocomplete="off" data-i18n-placeholder="phExerciseName" />
+      </div>
+
+      <label class="bw-check">
+        <input type="checkbox" id="bodyweightCheck" />
+        <span data-i18n="lblBodyweight">Bodyweight exercise</span>
+      </label>
+
+      <div class="entry-row" style="margin-top:12px;">
+        <div class="field">
+          <label for="weightInput" id="weightLabel" data-i18n="lblWeight">Weight</label>
+          <input type="number" id="weightInput" inputmode="decimal" min="0" step="0.5" placeholder="0" />
+        </div>
+        <div class="field">
+          <label data-i18n="lblUnit">Unit</label>
+          <div class="unit-toggle">
+            <button type="button" id="unitLbs" class="active">LBS</button>
+            <button type="button" id="unitKg">KG</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="repsInput" data-i18n="lblReps">Reps</label>
+          <input type="number" id="repsInput" inputmode="numeric" min="1" step="1" placeholder="0" />
+        </div>
+      </div>
+      <button type="button" class="log-btn-full" id="logBtn" data-i18n="btnLogSet">LOG SET</button>
+
+      <div class="rest-row">
+        <span class="rlabel" data-i18n="lblRestBetweenSets">Rest between sets</span>
+        <button type="button" class="rest-chip" data-secs="60">1:00</button>
+        <button type="button" class="rest-chip active" data-secs="120">2:00</button>
+        <button type="button" class="rest-chip" data-secs="180">3:00</button>
+        <div class="rest-custom">
+          <input type="number" id="restCustom" min="0" step="5" value="120">
+          <span data-i18n="lblSec">sec</span>
+        </div>
+      </div>
+
+      <div class="timer-card" id="timerCard">
+        <div class="timer-ring" id="timerRing" style="--pct:100">
+          <div class="timer-ring-inner"><div class="timer-count mono" id="timerCount">2:00</div></div>
+        </div>
+        <div class="timer-mid">
+          <div class="timer-label" id="timerLabel"></div>
+          <div class="timer-actions">
+            <button type="button" id="timerMinus">−15s</button>
+            <button type="button" id="timerPlus">+15s</button>
+            <button type="button" class="done-btn" id="timerDone" data-i18n="btnDone">Done</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="session-strip empty" id="sessionStrip"></div>
+    </div>
+  </section>
+
+  <!-- ================= HISTORY TAB (calendar) ================= -->
+  <section class="view" id="view-history">
+    <p class="eyebrow" data-i18n="eyebrowHistory">HISTORY</p>
+
+    <div class="cal-card">
+      <div class="cal-head">
+        <button type="button" class="cal-nav-btn" id="calPrev" aria-label="Previous month">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+        </button>
+        <div class="cal-title" id="calTitle"></div>
+        <button type="button" class="cal-nav-btn" id="calNext" aria-label="Next month">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+      <div class="cal-dow-row" id="calDowRow"></div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div style="text-align:center; margin-top:12px;">
+        <button type="button" class="cal-today-btn" id="calTodayBtn" data-i18n="wToday">Today</button>
+      </div>
+    </div>
+
+    <div class="day-detail" id="dayDetail"></div>
+
+    <p class="sync-note" id="syncNote"></p>
+  </section>
+
+  <!-- ================= SETTINGS TAB ================= -->
+  <section class="view" id="view-settings">
+    <div class="settings-block">
+      <p class="eyebrow" data-i18n="eyebrowLanguage">LANGUAGE</p>
+      <div class="lang-grid" id="langGrid"></div>
+    </div>
+
+    <div class="settings-block">
+      <p class="eyebrow" data-i18n="eyebrowTheme">THEME</p>
+      <div class="theme-grid" id="themeGrid"></div>
+    </div>
+
+    <div class="settings-block">
+      <p class="eyebrow" data-i18n="eyebrowRestPrefs">REST TIMER</p>
+      <div class="settings-toggle-row">
+        <span class="stxt" data-i18n="lblSound">Sound</span>
+        <label class="switch"><input type="checkbox" id="soundToggle" checked><span class="slider"></span></label>
+      </div>
+      <div class="settings-toggle-row">
+        <span class="stxt" data-i18n="lblAutostart">Start timer automatically when you log a set</span>
+        <label class="switch"><input type="checkbox" id="autostartRest" checked><span class="slider"></span></label>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="tabbar-space"></div>
+<nav class="tabbar">
+  <div class="tabbar-inner">
+    <button type="button" class="tab-btn active" data-tab="reps">
+      <span class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="1" y="9" width="3" height="6" rx="1"/><rect x="20" y="9" width="3" height="6" rx="1"/><rect x="4" y="7" width="2.5" height="10" rx="1"/><rect x="17.5" y="7" width="2.5" height="10" rx="1"/><line x1="6.5" y1="12" x2="17.5" y2="12"/></svg></span>
+      <span data-i18n="tabReps">Reps</span>
+    </button>
+    <button type="button" class="tab-btn" data-tab="history">
+      <span class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg></span>
+      <span data-i18n="tabHistory">History</span>
+    </button>
+    <button type="button" class="tab-btn" data-tab="settings">
+      <span class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="2"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="2"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="11" cy="18" r="2"/></svg></span>
+      <span data-i18n="tabSettings">Settings</span>
+    </button>
+  </div>
+</nav>
+
+<script>
+(function () {
+  // =========================================================================
+  // i18n
+  // =========================================================================
+  var LANGUAGES = [
+    { code: "en", native: "English" }, { code: "es", native: "Español" }, { code: "fr", native: "Français" },
+    { code: "de", native: "Deutsch" }, { code: "pt", native: "Português" }, { code: "it", native: "Italiano" },
+    { code: "ja", native: "日本語" }, { code: "zh", native: "中文" }
+  ];
+  var LOCALE_MAP = { en: "en-US", es: "es-ES", fr: "fr-FR", de: "de-DE", pt: "pt-PT", it: "it-IT", ja: "ja-JP", zh: "zh-CN" };
+
+  var I18N = {
+    en: {
+      tabReps:"Reps", tabHistory:"History", tabSettings:"Settings",
+      lblSets:"Sets", lblReps:"Reps", lblVolume:"Volume",
+      eyebrowLog:"LOG A SET", eyebrowHistory:"HISTORY", eyebrowLanguage:"LANGUAGE", eyebrowTheme:"THEME", eyebrowRestPrefs:"REST TIMER",
+      modeRamp:"Ramp Mode", modeLadder:"Ladder Mode",
+      rampSubhead:"Steps weight up each round — start moderate, add weight every few sets. (e.g. bench starting at 45 lbs, +5 lbs every 3 sets, up to 160 lbs)",
+      lblStartWt:"Start wt", lblIncrement:"+ Increment", lblRepsPerSet:"Reps/set", lblSetsPerWeight:"Sets/weight", lblStopAt:"Stop at",
+      btnStartRamp:"Start Ramp", btnReset:"Reset",
+      ladderSubhead:"Steps reps down each set, with a shrinking rest in between — same weight throughout. (e.g. push-ups: 15 reps, 30s rest, then 14 reps, 28s rest, … down to 1)",
+      lblStartReps:"Start reps", lblRepStep:"Rep step", lblEndReps:"End reps", lblStartRest:"Start rest", lblRestStep:"Rest step", lblMinRest:"Min rest",
+      btnStartLadder:"Start Ladder",
+      wNotStarted:"Not started.", wRampCompleteAt:"Ramp complete — topped out at", wLadderCompleteAt:"Ladder complete — finished at",
+      wSet:"set", wRound:"round", wRung:"rung", wNextRest:"next rest",
+      lblWeight:"Weight", lblAddedWeight:"Added weight", lblUnit:"Unit", btnLogSet:"Log Set",
+      lblBodyweight:"Bodyweight exercise",
+      lblRestBetweenSets:"Rest between sets", lblSec:"sec",
+      wRestingBefore:"Resting before your next", wRestSuffix:"set", wRestCompleteMsg:"Rest complete — log your next set when ready",
+      btnDone:"Done",
+      exBenchPress:"Bench Press", exSquat:"Squat", exDeadlift:"Deadlift", exOverheadPress:"Overhead Press", exBarbellRow:"Barbell Row", exPullUp:"Pull-Up", exPushUp:"Push-Up", exBicepCurl:"Bicep Curl", exCustom:"+ Custom",
+      phExerciseName:"Exercise name…",
+      wBest:"best", wBW:"BW",
+      dayEmptyMsg:"No sets logged this day.",
+      wToday:"Today", wYesterday:"Yesterday", wSetsTotal:"sets", wRepsTotalWord:"reps", wVolWord:"vol",
+      lblLanguage:"Language", lblTheme:"Theme", lblAuto:"Auto (match device)",
+      lblSound:"Sound", lblAutostart:"Start timer automatically when you log a set",
+      noteSynced:"Synced — your log is saved and follows you across devices.", noteLocal:"Saving locally in this browser only.",
+      wRep:"rep", wReps:"reps"
+    },
+    es: {
+      tabReps:"Reps", tabHistory:"Historial", tabSettings:"Ajustes",
+      lblSets:"Series", lblReps:"Reps", lblVolume:"Volumen",
+      eyebrowLog:"REGISTRAR SERIE", eyebrowHistory:"HISTORIAL", eyebrowLanguage:"IDIOMA", eyebrowTheme:"TEMA", eyebrowRestPrefs:"TEMPORIZADOR DE DESCANSO",
+      modeRamp:"Modo Rampa", modeLadder:"Modo Escalera",
+      rampSubhead:"Aumenta el peso cada ronda — empieza moderado y añade peso cada pocas series. (ej. press banca desde 20 kg, +2,5 kg cada 3 series, hasta 70 kg)",
+      lblStartWt:"Peso inicial", lblIncrement:"+ Incremento", lblRepsPerSet:"Reps/serie", lblSetsPerWeight:"Series/peso", lblStopAt:"Detener en",
+      btnStartRamp:"Iniciar Rampa", btnReset:"Reiniciar",
+      ladderSubhead:"Reduce las repeticiones en cada serie, con un descanso cada vez más corto — mismo peso todo el tiempo. (ej. flexiones: 15 reps, 30s descanso, luego 14 reps, 28s… hasta 1)",
+      lblStartReps:"Reps iniciales", lblRepStep:"Paso de reps", lblEndReps:"Reps finales", lblStartRest:"Descanso inicial", lblRestStep:"Paso de descanso", lblMinRest:"Descanso mín.",
+      btnStartLadder:"Iniciar Escalera",
+      wNotStarted:"Sin iniciar.", wRampCompleteAt:"Rampa completa — máximo alcanzado:", wLadderCompleteAt:"Escalera completa — terminó en",
+      wSet:"serie", wRound:"ronda", wRung:"peldaño", wNextRest:"próximo descanso",
+      lblWeight:"Peso", lblAddedWeight:"Peso añadido", lblUnit:"Unidad", btnLogSet:"Registrar",
+      lblBodyweight:"Ejercicio con peso corporal",
+      lblRestBetweenSets:"Descanso entre series", lblSec:"seg",
+      wRestingBefore:"Descansando antes de tu próxima serie de", wRestSuffix:"", wRestCompleteMsg:"Descanso terminado — registra tu próxima serie cuando estés listo",
+      btnDone:"Listo",
+      exBenchPress:"Press Banca", exSquat:"Sentadilla", exDeadlift:"Peso Muerto", exOverheadPress:"Press Militar", exBarbellRow:"Remo con Barra", exPullUp:"Dominada", exPushUp:"Flexión", exBicepCurl:"Curl de Bíceps", exCustom:"+ Personalizado",
+      phExerciseName:"Nombre del ejercicio…",
+      wBest:"mejor", wBW:"PC",
+      dayEmptyMsg:"No hay series registradas este día.",
+      wToday:"Hoy", wYesterday:"Ayer", wSetsTotal:"series", wRepsTotalWord:"reps", wVolWord:"vol",
+      lblLanguage:"Idioma", lblTheme:"Tema", lblAuto:"Automático (según dispositivo)",
+      lblSound:"Sonido", lblAutostart:"Iniciar el temporizador automáticamente al registrar",
+      noteSynced:"Sincronizado — tu registro se guarda y te sigue en todos los dispositivos.", noteLocal:"Guardando solo localmente en este navegador.",
+      wRep:"rep", wReps:"reps"
+    },
+    fr: {
+      tabReps:"Séries", tabHistory:"Historique", tabSettings:"Réglages",
+      lblSets:"Séries", lblReps:"Reps", lblVolume:"Volume",
+      eyebrowLog:"ENREGISTRER UNE SÉRIE", eyebrowHistory:"HISTORIQUE", eyebrowLanguage:"LANGUE", eyebrowTheme:"THÈME", eyebrowRestPrefs:"MINUTEUR DE REPOS",
+      modeRamp:"Mode Rampe", modeLadder:"Mode Échelle",
+      rampSubhead:"Augmente le poids à chaque tour — commence modéré et ajoute du poids toutes les quelques séries. (ex. développé couché à partir de 20 kg, +2,5 kg toutes les 3 séries, jusqu'à 70 kg)",
+      lblStartWt:"Poids initial", lblIncrement:"+ Incrément", lblRepsPerSet:"Reps/série", lblSetsPerWeight:"Séries/poids", lblStopAt:"Arrêter à",
+      btnStartRamp:"Démarrer la Rampe", btnReset:"Réinitialiser",
+      ladderSubhead:"Réduit les répétitions à chaque série, avec un repos de plus en plus court — même poids tout du long. (ex. pompes : 15 reps, 30s repos, puis 14 reps, 28s… jusqu'à 1)",
+      lblStartReps:"Reps de départ", lblRepStep:"Pas de reps", lblEndReps:"Reps finales", lblStartRest:"Repos de départ", lblRestStep:"Pas de repos", lblMinRest:"Repos min.",
+      btnStartLadder:"Démarrer l'Échelle",
+      wNotStarted:"Pas commencé.", wRampCompleteAt:"Rampe terminée — maximum atteint :", wLadderCompleteAt:"Échelle terminée — finie à",
+      wSet:"série", wRound:"tour", wRung:"échelon", wNextRest:"prochain repos",
+      lblWeight:"Poids", lblAddedWeight:"Poids ajouté", lblUnit:"Unité", btnLogSet:"Enregistrer",
+      lblBodyweight:"Exercice au poids du corps",
+      lblRestBetweenSets:"Repos entre les séries", lblSec:"sec",
+      wRestingBefore:"Repos avant ta prochaine série de", wRestSuffix:"", wRestCompleteMsg:"Repos terminé — enregistre ta prochaine série quand tu es prêt",
+      btnDone:"Terminé",
+      exBenchPress:"Développé Couché", exSquat:"Squat", exDeadlift:"Soulevé de Terre", exOverheadPress:"Développé Militaire", exBarbellRow:"Rowing Barre", exPullUp:"Traction", exPushUp:"Pompe", exBicepCurl:"Curl Biceps", exCustom:"+ Personnalisé",
+      phExerciseName:"Nom de l'exercice…",
+      wBest:"record", wBW:"PDC",
+      dayEmptyMsg:"Aucune série enregistrée ce jour-là.",
+      wToday:"Aujourd'hui", wYesterday:"Hier", wSetsTotal:"séries", wRepsTotalWord:"reps", wVolWord:"vol",
+      lblLanguage:"Langue", lblTheme:"Thème", lblAuto:"Auto (selon l'appareil)",
+      lblSound:"Son", lblAutostart:"Démarrer le minuteur automatiquement à l'enregistrement",
+      noteSynced:"Synchronisé — ton journal est enregistré et te suit sur tous tes appareils.", noteLocal:"Enregistrement local uniquement, dans ce navigateur.",
+      wRep:"rep", wReps:"reps"
+    },
+    de: {
+      tabReps:"Sätze", tabHistory:"Verlauf", tabSettings:"Einstellungen",
+      lblSets:"Sätze", lblReps:"Wdh.", lblVolume:"Volumen",
+      eyebrowLog:"SATZ ERFASSEN", eyebrowHistory:"VERLAUF", eyebrowLanguage:"SPRACHE", eyebrowTheme:"DESIGN", eyebrowRestPrefs:"PAUSEN-TIMER",
+      modeRamp:"Rampen-Modus", modeLadder:"Leiter-Modus",
+      rampSubhead:"Steigert das Gewicht jede Runde — moderat starten und alle paar Sätze Gewicht dazugeben. (z. B. Bankdrücken ab 20 kg, +2,5 kg alle 3 Sätze, bis 70 kg)",
+      lblStartWt:"Startgewicht", lblIncrement:"+ Steigerung", lblRepsPerSet:"Wdh./Satz", lblSetsPerWeight:"Sätze/Gewicht", lblStopAt:"Stopp bei",
+      btnStartRamp:"Rampe starten", btnReset:"Zurücksetzen",
+      ladderSubhead:"Reduziert die Wiederholungen bei jedem Satz, mit kürzer werdender Pause dazwischen — gleiches Gewicht durchgehend. (z. B. Liegestütze: 15 Wdh., 30s Pause, dann 14 Wdh., 28s … bis 1)",
+      lblStartReps:"Start-Wdh.", lblRepStep:"Wdh.-Schritt", lblEndReps:"End-Wdh.", lblStartRest:"Startpause", lblRestStep:"Pausen-Schritt", lblMinRest:"Min. Pause",
+      btnStartLadder:"Leiter starten",
+      wNotStarted:"Noch nicht gestartet.", wRampCompleteAt:"Rampe abgeschlossen — Höchstwert erreicht:", wLadderCompleteAt:"Leiter abgeschlossen — beendet bei",
+      wSet:"Satz", wRound:"Runde", wRung:"Stufe", wNextRest:"nächste Pause",
+      lblWeight:"Gewicht", lblAddedWeight:"Zusatzgewicht", lblUnit:"Einheit", btnLogSet:"Satz erfassen",
+      lblBodyweight:"Körpergewichtsübung",
+      lblRestBetweenSets:"Pause zwischen Sätzen", lblSec:"Sek.",
+      wRestingBefore:"Pause vor deinem nächsten", wRestSuffix:"Satz", wRestCompleteMsg:"Pause vorbei — erfasse deinen nächsten Satz, wenn du bereit bist",
+      btnDone:"Fertig",
+      exBenchPress:"Bankdrücken", exSquat:"Kniebeuge", exDeadlift:"Kreuzheben", exOverheadPress:"Schulterdrücken", exBarbellRow:"Langhantelrudern", exPullUp:"Klimmzug", exPushUp:"Liegestütz", exBicepCurl:"Bizepscurl", exCustom:"+ Eigene",
+      phExerciseName:"Übungsname…",
+      wBest:"Bestwert", wBW:"KG-eigen",
+      dayEmptyMsg:"An diesem Tag wurden keine Sätze erfasst.",
+      wToday:"Heute", wYesterday:"Gestern", wSetsTotal:"Sätze", wRepsTotalWord:"Wdh.", wVolWord:"Vol.",
+      lblLanguage:"Sprache", lblTheme:"Design", lblAuto:"Automatisch (Gerät folgen)",
+      lblSound:"Ton", lblAutostart:"Timer beim Erfassen automatisch starten",
+      noteSynced:"Synchronisiert — dein Log wird gespeichert und folgt dir auf allen Geräten.", noteLocal:"Wird nur lokal in diesem Browser gespeichert.",
+      wRep:"Wdh.", wReps:"Wdh."
+    },
+    pt: {
+      tabReps:"Séries", tabHistory:"Histórico", tabSettings:"Config.",
+      lblSets:"Séries", lblReps:"Reps", lblVolume:"Volume",
+      eyebrowLog:"REGISTRAR SÉRIE", eyebrowHistory:"HISTÓRICO", eyebrowLanguage:"IDIOMA", eyebrowTheme:"TEMA", eyebrowRestPrefs:"TEMPORIZADOR DE DESCANSO",
+      modeRamp:"Modo Rampa", modeLadder:"Modo Escada",
+      rampSubhead:"Aumenta o peso a cada rodada — comece moderado e adicione peso a cada poucas séries. (ex. supino a partir de 20 kg, +2,5 kg a cada 3 séries, até 70 kg)",
+      lblStartWt:"Peso inicial", lblIncrement:"+ Incremento", lblRepsPerSet:"Reps/série", lblSetsPerWeight:"Séries/peso", lblStopAt:"Parar em",
+      btnStartRamp:"Iniciar Rampa", btnReset:"Redefinir",
+      ladderSubhead:"Reduz as repetições a cada série, com um descanso cada vez menor — mesmo peso o tempo todo. (ex. flexões: 15 reps, 30s descanso, depois 14 reps, 28s… até 1)",
+      lblStartReps:"Reps iniciais", lblRepStep:"Passo de reps", lblEndReps:"Reps finais", lblStartRest:"Descanso inicial", lblRestStep:"Passo de descanso", lblMinRest:"Descanso mín.",
+      btnStartLadder:"Iniciar Escada",
+      wNotStarted:"Não iniciado.", wRampCompleteAt:"Rampa concluída — máximo atingido:", wLadderCompleteAt:"Escada concluída — terminou em",
+      wSet:"série", wRound:"rodada", wRung:"degrau", wNextRest:"próximo descanso",
+      lblWeight:"Peso", lblAddedWeight:"Peso adicional", lblUnit:"Unidade", btnLogSet:"Registrar",
+      lblBodyweight:"Exercício com peso corporal",
+      lblRestBetweenSets:"Descanso entre séries", lblSec:"seg",
+      wRestingBefore:"Descansando antes da sua próxima série de", wRestSuffix:"", wRestCompleteMsg:"Descanso concluído — registre sua próxima série quando estiver pronto",
+      btnDone:"Concluído",
+      exBenchPress:"Supino", exSquat:"Agachamento", exDeadlift:"Levantamento Terra", exOverheadPress:"Desenvolvimento", exBarbellRow:"Remada Curvada", exPullUp:"Barra Fixa", exPushUp:"Flexão", exBicepCurl:"Rosca Direta", exCustom:"+ Personalizado",
+      phExerciseName:"Nome do exercício…",
+      wBest:"melhor", wBW:"PC",
+      dayEmptyMsg:"Nenhuma série registrada neste dia.",
+      wToday:"Hoje", wYesterday:"Ontem", wSetsTotal:"séries", wRepsTotalWord:"reps", wVolWord:"vol",
+      lblLanguage:"Idioma", lblTheme:"Tema", lblAuto:"Automático (seguir dispositivo)",
+      lblSound:"Som", lblAutostart:"Iniciar o temporizador automaticamente ao registrar",
+      noteSynced:"Sincronizado — seu registro é salvo e te acompanha em todos os dispositivos.", noteLocal:"Salvando apenas localmente neste navegador.",
+      wRep:"rep", wReps:"reps"
+    },
+    it: {
+      tabReps:"Serie", tabHistory:"Cronologia", tabSettings:"Impostazioni",
+      lblSets:"Serie", lblReps:"Rip.", lblVolume:"Volume",
+      eyebrowLog:"REGISTRA UNA SERIE", eyebrowHistory:"CRONOLOGIA", eyebrowLanguage:"LINGUA", eyebrowTheme:"TEMA", eyebrowRestPrefs:"TIMER DI RIPOSO",
+      modeRamp:"Modalità Rampa", modeLadder:"Modalità Scala",
+      rampSubhead:"Aumenta il peso ogni round — inizia moderato e aggiungi peso ogni poche serie. (es. panca da 20 kg, +2,5 kg ogni 3 serie, fino a 70 kg)",
+      lblStartWt:"Peso iniziale", lblIncrement:"+ Incremento", lblRepsPerSet:"Rip./serie", lblSetsPerWeight:"Serie/peso", lblStopAt:"Ferma a",
+      btnStartRamp:"Avvia Rampa", btnReset:"Reimposta",
+      ladderSubhead:"Riduce le ripetizioni ad ogni serie, con un riposo sempre più breve — stesso peso per tutto il tempo. (es. flessioni: 15 rip., 30s riposo, poi 14 rip., 28s… fino a 1)",
+      lblStartReps:"Rip. iniziali", lblRepStep:"Passo rip.", lblEndReps:"Rip. finali", lblStartRest:"Riposo iniziale", lblRestStep:"Passo riposo", lblMinRest:"Riposo min.",
+      btnStartLadder:"Avvia Scala",
+      wNotStarted:"Non iniziato.", wRampCompleteAt:"Rampa completata — massimo raggiunto:", wLadderCompleteAt:"Scala completata — terminata a",
+      wSet:"serie", wRound:"round", wRung:"gradino", wNextRest:"prossimo riposo",
+      lblWeight:"Peso", lblAddedWeight:"Peso aggiuntivo", lblUnit:"Unità", btnLogSet:"Registra",
+      lblBodyweight:"Esercizio a corpo libero",
+      lblRestBetweenSets:"Riposo tra le serie", lblSec:"sec",
+      wRestingBefore:"Riposo prima della tua prossima serie di", wRestSuffix:"", wRestCompleteMsg:"Riposo terminato — registra la prossima serie quando sei pronto",
+      btnDone:"Fatto",
+      exBenchPress:"Panca Piana", exSquat:"Squat", exDeadlift:"Stacco da Terra", exOverheadPress:"Military Press", exBarbellRow:"Rematore con Bilanciere", exPullUp:"Trazione", exPushUp:"Flessione", exBicepCurl:"Curl per Bicipiti", exCustom:"+ Personalizzato",
+      phExerciseName:"Nome esercizio…",
+      wBest:"record", wBW:"PC",
+      dayEmptyMsg:"Nessuna serie registrata in questo giorno.",
+      wToday:"Oggi", wYesterday:"Ieri", wSetsTotal:"serie", wRepsTotalWord:"rip.", wVolWord:"vol",
+      lblLanguage:"Lingua", lblTheme:"Tema", lblAuto:"Automatico (segui dispositivo)",
+      lblSound:"Suono", lblAutostart:"Avvia il timer automaticamente alla registrazione",
+      noteSynced:"Sincronizzato — il tuo registro viene salvato e ti segue su tutti i dispositivi.", noteLocal:"Salvataggio solo locale in questo browser.",
+      wRep:"rip.", wReps:"rip."
+    },
+    ja: {
+      tabReps:"記録", tabHistory:"履歴", tabSettings:"設定",
+      lblSets:"セット", lblReps:"レップ", lblVolume:"総量",
+      eyebrowLog:"セットを記録", eyebrowHistory:"履歴", eyebrowLanguage:"言語", eyebrowTheme:"テーマ", eyebrowRestPrefs:"休憩タイマー",
+      modeRamp:"ランプモード", modeLadder:"ラダーモード",
+      rampSubhead:"ラウンドごとに重量を増やす方式です。控えめな重量から始め、数セットごとに重量を追加します。(例: ベンチプレス20kgから開始、3セットごとに+2.5kg、70kgまで)",
+      lblStartWt:"開始重量", lblIncrement:"+ 増加量", lblRepsPerSet:"レップ/セット", lblSetsPerWeight:"セット/重量", lblStopAt:"終了重量",
+      btnStartRamp:"ランプ開始", btnReset:"リセット",
+      ladderSubhead:"セットごとにレップ数を減らし、休憩時間も短くしていく方式です。重量は一定です。(例: 腕立て伏せ:15レップ・30秒休憩 → 14レップ・28秒休憩 …1レップまで)",
+      lblStartReps:"開始レップ", lblRepStep:"レップ幅", lblEndReps:"終了レップ", lblStartRest:"開始休憩", lblRestStep:"休憩の減少幅", lblMinRest:"最小休憩",
+      btnStartLadder:"ラダー開始",
+      wNotStarted:"未開始です。", wRampCompleteAt:"ランプ完了 — 最大到達重量:", wLadderCompleteAt:"ラダー完了 — 終了レップ数:",
+      wSet:"セット", wRound:"ラウンド", wRung:"段", wNextRest:"次の休憩",
+      lblWeight:"重量", lblAddedWeight:"追加重量", lblUnit:"単位", btnLogSet:"記録する",
+      lblBodyweight:"自重種目",
+      lblRestBetweenSets:"セット間の休憩", lblSec:"秒",
+      wRestingBefore:"次の", wRestSuffix:"セットまで休憩中", wRestCompleteMsg:"休憩終了 — 準備ができたら次のセットを記録してください",
+      btnDone:"完了",
+      exBenchPress:"ベンチプレス", exSquat:"スクワット", exDeadlift:"デッドリフト", exOverheadPress:"オーバーヘッドプレス", exBarbellRow:"バーベルロウ", exPullUp:"懸垂", exPushUp:"腕立て伏せ", exBicepCurl:"アームカール", exCustom:"+ カスタム",
+      phExerciseName:"種目名…",
+      wBest:"自己ベスト", wBW:"自重",
+      dayEmptyMsg:"この日の記録はありません。",
+      wToday:"今日", wYesterday:"昨日", wSetsTotal:"セット", wRepsTotalWord:"レップ", wVolWord:"総量",
+      lblLanguage:"言語", lblTheme:"テーマ", lblAuto:"自動(端末に合わせる)",
+      lblSound:"サウンド", lblAutostart:"記録時にタイマーを自動開始する",
+      noteSynced:"同期済み — 記録は保存され、どの端末からでも確認できます。", noteLocal:"このブラウザにのみローカル保存されています。",
+      wRep:"レップ", wReps:"レップ"
+    },
+    zh: {
+      tabReps:"记录", tabHistory:"历史", tabSettings:"设置",
+      lblSets:"组数", lblReps:"次数", lblVolume:"总量",
+      eyebrowLog:"记录一组", eyebrowHistory:"历史记录", eyebrowLanguage:"语言", eyebrowTheme:"主题", eyebrowRestPrefs:"休息计时器",
+      modeRamp:"递增模式", modeLadder:"阶梯模式",
+      rampSubhead:"每轮增加重量——从较轻的重量开始,每几组增加一次重量。(例如卧推从20公斤开始,每3组+2.5公斤,直到70公斤)",
+      lblStartWt:"起始重量", lblIncrement:"+ 增量", lblRepsPerSet:"每组次数", lblSetsPerWeight:"每重量组数", lblStopAt:"停止于",
+      btnStartRamp:"开始递增", btnReset:"重置",
+      ladderSubhead:"每组减少次数,休息时间也逐渐缩短——重量保持不变。(例如俯卧撑:15次休息30秒,然后14次休息28秒……直到1次)",
+      lblStartReps:"起始次数", lblRepStep:"次数递减", lblEndReps:"结束次数", lblStartRest:"起始休息", lblRestStep:"休息递减", lblMinRest:"最短休息",
+      btnStartLadder:"开始阶梯",
+      wNotStarted:"尚未开始。", wRampCompleteAt:"递增完成——最高重量:", wLadderCompleteAt:"阶梯完成——结束于",
+      wSet:"组", wRound:"轮", wRung:"级", wNextRest:"下次休息",
+      lblWeight:"重量", lblAddedWeight:"额外重量", lblUnit:"单位", btnLogSet:"记录",
+      lblBodyweight:"自重训练",
+      lblRestBetweenSets:"组间休息", lblSec:"秒",
+      wRestingBefore:"", wRestSuffix:"下一组前休息中", wRestCompleteMsg:"休息结束——准备好后记录下一组",
+      btnDone:"完成",
+      exBenchPress:"卧推", exSquat:"深蹲", exDeadlift:"硬拉", exOverheadPress:"推举", exBarbellRow:"杠铃划船", exPullUp:"引体向上", exPushUp:"俯卧撑", exBicepCurl:"二头弯举", exCustom:"+ 自定义",
+      phExerciseName:"动作名称…",
+      wBest:"最佳", wBW:"自重",
+      dayEmptyMsg:"这一天没有记录。",
+      wToday:"今天", wYesterday:"昨天", wSetsTotal:"组", wRepsTotalWord:"次", wVolWord:"总量",
+      lblLanguage:"语言", lblTheme:"主题", lblAuto:"自动(跟随设备)",
+      lblSound:"声音", lblAutostart:"记录时自动开始计时",
+      noteSynced:"已同步——你的记录已保存,可在所有设备上查看。", noteLocal:"仅保存在此浏览器本地。",
+      wRep:"次", wReps:"次"
+    }
+  };
+
+  var EX_I18N_KEY = {
+    "Bench Press": "exBenchPress", "Squat": "exSquat", "Deadlift": "exDeadlift",
+    "Overhead Press": "exOverheadPress", "Barbell Row": "exBarbellRow",
+    "Pull-Up": "exPullUp", "Push-Up": "exPushUp", "Bicep Curl": "exBicepCurl"
+  };
+
+  var LANG = "en";
+
+  function t(key) {
+    var dict = I18N[LANG] || I18N.en;
+    var v = dict[key];
+    if (v === undefined || v === null) v = I18N.en[key];
+    return v === undefined ? key : v;
+  }
+
+  function exerciseLabel(canonical) {
+    var key = EX_I18N_KEY[canonical];
+    return key ? t(key) : canonical;
+  }
+
+  // =========================================================================
+  // Color themes
+  // =========================================================================
+  var THEMES = [
+    { id: "chalk-iron", name: "Chalk & Iron", c: ["#EDE7DB", "#FAF7F0", "#C9441E"] },
+    { id: "iron-night", name: "Iron Night", c: ["#17140F", "#2B241A", "#FF6A38"] },
+    { id: "steel-blue", name: "Steel Blue", c: ["#171B1F", "#29313A", "#3FA9E0"] },
+    { id: "crimson-gym", name: "Crimson Gym", c: ["#17100F", "#2B1E1B", "#E23B3B"] },
+    { id: "deep-forest", name: "Deep Forest", c: ["#10160F", "#202B1D", "#79C24A"] },
+    { id: "ocean-deep", name: "Ocean Deep", c: ["#0C1B24", "#17323F", "#2FBFA3"] },
+    { id: "golden-hour", name: "Golden Hour", c: ["#FBEEDD", "#F3E1C4", "#D98A1F"] },
+    { id: "neon-arcade", name: "Neon Arcade", c: ["#120E1C", "#241C3D", "#33E6C7"] },
+    { id: "blush", name: "Blush", c: ["#FBEEF0", "#F3DEE2", "#C6416F"] },
+    { id: "champion-gold", name: "Champion Gold", c: ["#121212", "#262626", "#D4AF37"] },
+    { id: "concrete", name: "Concrete", c: ["#E9EBEC", "#DADEE1", "#3B6E8F"] },
+    { id: "royal-violet", name: "Royal Violet", c: ["#150F1E", "#281D36", "#9D5CE0"] },
+    { id: "citrus-punch", name: "Citrus Punch", c: ["#F3F3DE", "#E3E2B8", "#7DB819"] },
+    { id: "midnight-ice", name: "Midnight Ice", c: ["#0A0E14", "#161D27", "#6FD3F0"] }
+  ];
+
+  var PALETTE = "auto";
+
+  // =========================================================================
+  // App state
+  // =========================================================================
+  var COMMON_EXERCISES = ["Bench Press", "Squat", "Deadlift", "Overhead Press", "Barbell Row", "Pull-Up", "Push-Up", "Bicep Curl"];
+  var BODYWEIGHT_DEFAULT = { "Pull-Up": true, "Push-Up": true };
+
+  var state = {
+    selectedExercise: COMMON_EXERCISES[0],
+    isCustom: false,
+    unit: "lbs",
+    restTarget: 120,
+    sets: []
+  };
+
+  var ramp = {
+    active: false, exercise: null, startWeight: 45, increment: 5, repsTarget: 30,
+    setsPerWeight: 3, topWeight: 160, currentWeight: 45, setsDoneAtWeight: 0
+  };
+
+  var ladder = {
+    active: false, exercise: null, startReps: 15, repStep: 1, endReps: 1,
+    startRest: 30, restStep: 2, minRest: 0, currentReps: 15, currentRestSeconds: 30
+  };
+
+  var timer = {
+    running: false, entryId: null, targetSeconds: 120, remaining: 120,
+    intervalId: null, exerciseLabel: ""
+  };
+
+  var db = null;
+  var writable = true;
+
+  var todayD = new Date();
+  var calendarMonth = new Date(todayD.getFullYear(), todayD.getMonth(), 1);
+  var selectedDateKey = todayKeyFn(todayD);
+
+  // ---------- DOM refs ----------
+  var chipsEl = document.getElementById("exerciseChips");
+  var customWrap = document.getElementById("customExerciseWrap");
+  var customInput = document.getElementById("customExercise");
+  var weightInput = document.getElementById("weightInput");
+  var weightLabel = document.getElementById("weightLabel");
+  var repsInput = document.getElementById("repsInput");
+  var unitLbsBtn = document.getElementById("unitLbs");
+  var unitKgBtn = document.getElementById("unitKg");
+  var bwCheck = document.getElementById("bodyweightCheck");
+  var logBtn = document.getElementById("logBtn");
+  var sessionStrip = document.getElementById("sessionStrip");
+  var statSets = document.getElementById("statSets");
+  var statReps = document.getElementById("statReps");
+  var statVolume = document.getElementById("statVolume");
+  var syncNote = document.getElementById("syncNote");
+
+  var rampToggle = document.getElementById("rampToggle");
+  var rampConfig = document.getElementById("rampConfig");
+  var rampStartInput = document.getElementById("rampStart");
+  var rampIncrementInput = document.getElementById("rampIncrement");
+  var rampRepsInput = document.getElementById("rampReps");
+  var rampSetsPerInput = document.getElementById("rampSetsPer");
+  var rampTopInput = document.getElementById("rampTop");
+  var rampStartBtn = document.getElementById("rampStartBtn");
+  var rampResetBtn = document.getElementById("rampResetBtn");
+  var rampStatus = document.getElementById("rampStatus");
+
+  var ladderToggle = document.getElementById("ladderToggle");
+  var ladderConfig = document.getElementById("ladderConfig");
+  var ladderStartRepsInput = document.getElementById("ladderStartReps");
+  var ladderRepStepInput = document.getElementById("ladderRepStep");
+  var ladderEndRepsInput = document.getElementById("ladderEndReps");
+  var ladderStartRestInput = document.getElementById("ladderStartRest");
+  var ladderRestStepInput = document.getElementById("ladderRestStep");
+  var ladderMinRestInput = document.getElementById("ladderMinRest");
+  var ladderStartBtn = document.getElementById("ladderStartBtn");
+  var ladderResetBtn = document.getElementById("ladderResetBtn");
+  var ladderStatus = document.getElementById("ladderStatus");
+
+  var restChips = document.querySelectorAll(".rest-chip");
+  var restCustom = document.getElementById("restCustom");
+  var autostartRest = document.getElementById("autostartRest");
+  var soundToggle = document.getElementById("soundToggle");
+
+  var timerCard = document.getElementById("timerCard");
+  var timerRing = document.getElementById("timerRing");
+  var timerCount = document.getElementById("timerCount");
+  var timerLabel = document.getElementById("timerLabel");
+  var timerMinus = document.getElementById("timerMinus");
+  var timerPlus = document.getElementById("timerPlus");
+  var timerDone = document.getElementById("timerDone");
+
+  var langGrid = document.getElementById("langGrid");
+  var themeGrid = document.getElementById("themeGrid");
+
+  var calTitle = document.getElementById("calTitle");
+  var calDowRow = document.getElementById("calDowRow");
+  var calGrid = document.getElementById("calGrid");
+  var calPrev = document.getElementById("calPrev");
+  var calNext = document.getElementById("calNext");
+  var calTodayBtn = document.getElementById("calTodayBtn");
+  var dayDetail = document.getElementById("dayDetail");
+
+  // =========================================================================
+  // Tabs
+  // =========================================================================
+  var tabBtns = document.querySelectorAll(".tab-btn");
+  var views = { reps: document.getElementById("view-reps"), history: document.getElementById("view-history"), settings: document.getElementById("view-settings") };
+
+  function switchTab(name) {
+    Object.keys(views).forEach(function (k) { views[k].classList.toggle("active", k === name); });
+    tabBtns.forEach(function (b) { b.classList.toggle("active", b.getAttribute("data-tab") === name); });
+    try { localStorage.setItem("iron-ledger-tab-v1", name); } catch (e) {}
+  }
+  tabBtns.forEach(function (b) {
+    b.addEventListener("click", function () { switchTab(b.getAttribute("data-tab")); });
+  });
+
+  // ---------- Exercise chips ----------
+  function renderChips() {
+    chipsEl.innerHTML = "";
+    COMMON_EXERCISES.forEach(function (name) {
+      var chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chip" + (!state.isCustom && state.selectedExercise === name ? " active" : "");
+      chip.textContent = exerciseLabel(name);
+      chip.addEventListener("click", function () {
+        state.isCustom = false;
+        state.selectedExercise = name;
+        bwCheck.checked = !!BODYWEIGHT_DEFAULT[name];
+        updateWeightLabel();
+        if (ramp.active && ramp.exercise !== name) deactivateRamp();
+        if (ladder.active && ladder.exercise !== name) deactivateLadder();
+        renderChips();
+      });
+      chipsEl.appendChild(chip);
+    });
+    var customChip = document.createElement("button");
+    customChip.type = "button";
+    customChip.className = "chip" + (state.isCustom ? " active" : "");
+    customChip.textContent = t("exCustom");
+    customChip.addEventListener("click", function () {
+      state.isCustom = true;
+      customWrap.classList.add("show");
+      customInput.focus();
+      if (ramp.active && ramp.exercise !== customInput.value.trim()) deactivateRamp();
+      if (ladder.active && ladder.exercise !== customInput.value.trim()) deactivateLadder();
+      renderChips();
+    });
+    chipsEl.appendChild(customChip);
+    customWrap.classList.toggle("show", state.isCustom);
+  }
+
+  unitLbsBtn.addEventListener("click", function () {
+    state.unit = "lbs";
+    unitLbsBtn.classList.add("active");
+    unitKgBtn.classList.remove("active");
+  });
+  unitKgBtn.addEventListener("click", function () {
+    state.unit = "kg";
+    unitKgBtn.classList.add("active");
+    unitLbsBtn.classList.remove("active");
+  });
+
+  // ---------- Bodyweight / added-weight ----------
+  function updateWeightLabel() {
+    weightLabel.textContent = bwCheck.checked ? t("lblAddedWeight") : t("lblWeight");
+    weightInput.placeholder = bwCheck.checked ? "0" : "0";
+  }
+  bwCheck.addEventListener("change", updateWeightLabel);
+
+  // ---------- Ramp mode ----------
+  function fmtWeight(w) { return (Math.round(w * 10) / 10).toString(); }
+
+  function updateModeToggleVisuals() {
+    rampToggle.classList.toggle("active", ramp.active);
+    ladderToggle.classList.toggle("active", ladder.active);
+  }
+
+  function applyRampPrefill() {
+    if (!ramp.active) return;
+    weightInput.value = fmtWeight(ramp.currentWeight);
+    repsInput.value = ramp.repsTarget;
+  }
+
+  function renderRampStatus() {
+    if (!ramp.active) {
+      if (rampStatus.getAttribute("data-complete") !== "1") rampStatus.textContent = t("wNotStarted");
+      return;
+    }
+    rampStatus.removeAttribute("data-complete");
+    var totalRounds = Math.floor((ramp.topWeight - ramp.startWeight) / ramp.increment) + 1;
+    var round = Math.round((ramp.currentWeight - ramp.startWeight) / ramp.increment) + 1;
+    rampStatus.innerHTML = escapeHtml(exerciseLabel(ramp.exercise)) + " — <b>" + fmtWeight(ramp.currentWeight) + state.unit + "</b> · " + t("wSet") + " " +
+      (ramp.setsDoneAtWeight + 1) + "/" + ramp.setsPerWeight + " · " + t("wRound") + " " + round + "/" + totalRounds;
+  }
+
+  rampToggle.addEventListener("click", function () { rampConfig.classList.toggle("show"); });
+
+  rampStartBtn.addEventListener("click", function () {
+    if (ladder.active) deactivateLadder();
+    ramp.exercise = currentExerciseName() || "Bench Press";
+    ramp.startWeight = parseFloat(rampStartInput.value) || 45;
+    ramp.increment = parseFloat(rampIncrementInput.value) || 5;
+    ramp.repsTarget = parseInt(rampRepsInput.value, 10) || 30;
+    ramp.setsPerWeight = parseInt(rampSetsPerInput.value, 10) || 3;
+    ramp.topWeight = parseFloat(rampTopInput.value) || ramp.startWeight;
+    ramp.currentWeight = ramp.startWeight;
+    ramp.setsDoneAtWeight = 0;
+    ramp.active = true;
+    applyRampPrefill();
+    renderRampStatus();
+    updateModeToggleVisuals();
+  });
+
+  function deactivateRamp() {
+    ramp.active = false;
+    renderRampStatus();
+    updateModeToggleVisuals();
+  }
+
+  rampResetBtn.addEventListener("click", function () {
+    ramp.active = false;
+    ramp.setsDoneAtWeight = 0;
+    ramp.currentWeight = parseFloat(rampStartInput.value) || 45;
+    rampStatus.removeAttribute("data-complete");
+    renderRampStatus();
+    updateModeToggleVisuals();
+  });
+
+  function advanceRamp() {
+    if (!ramp.active) return;
+    ramp.setsDoneAtWeight += 1;
+    if (ramp.setsDoneAtWeight >= ramp.setsPerWeight) {
+      ramp.setsDoneAtWeight = 0;
+      ramp.currentWeight += ramp.increment;
+      if (ramp.currentWeight > ramp.topWeight + 0.001) {
+        ramp.active = false;
+        rampStatus.setAttribute("data-complete", "1");
+        rampStatus.textContent = t("wRampCompleteAt") + " " + fmtWeight(ramp.topWeight) + state.unit + ".";
+        updateModeToggleVisuals();
+        return;
+      }
+    }
+    applyRampPrefill();
+    renderRampStatus();
+  }
+
+  // ---------- Ladder mode ----------
+  function applyLadderPrefill() {
+    if (!ladder.active) return;
+    repsInput.value = ladder.currentReps;
+    state.restTarget = ladder.currentRestSeconds;
+    restCustom.value = ladder.currentRestSeconds;
+    restChips.forEach(function (c) {
+      c.classList.toggle("active", parseInt(c.getAttribute("data-secs"), 10) === ladder.currentRestSeconds);
+    });
+  }
+
+  function renderLadderStatus() {
+    if (!ladder.active) {
+      if (ladderStatus.getAttribute("data-complete") !== "1") ladderStatus.textContent = t("wNotStarted");
+      return;
+    }
+    ladderStatus.removeAttribute("data-complete");
+    var totalRungs = Math.floor((ladder.startReps - ladder.endReps) / ladder.repStep) + 1;
+    var rung = Math.round((ladder.startReps - ladder.currentReps) / ladder.repStep) + 1;
+    ladderStatus.innerHTML = escapeHtml(exerciseLabel(ladder.exercise)) + " — <b>" + ladder.currentReps + " " + t("wReps") + "</b> · " + t("wNextRest") + " " +
+      ladder.currentRestSeconds + "s · " + t("wRung") + " " + rung + "/" + totalRungs;
+  }
+
+  ladderToggle.addEventListener("click", function () { ladderConfig.classList.toggle("show"); });
+
+  ladderStartBtn.addEventListener("click", function () {
+    if (ramp.active) deactivateRamp();
+    ladder.exercise = currentExerciseName() || "Push-Up";
+    ladder.startReps = parseInt(ladderStartRepsInput.value, 10) || 15;
+    ladder.repStep = parseInt(ladderRepStepInput.value, 10) || 1;
+    ladder.endReps = parseInt(ladderEndRepsInput.value, 10) || 1;
+    ladder.startRest = parseInt(ladderStartRestInput.value, 10) || 30;
+    ladder.restStep = parseInt(ladderRestStepInput.value, 10) || 0;
+    ladder.minRest = parseInt(ladderMinRestInput.value, 10) || 0;
+    ladder.currentReps = ladder.startReps;
+    ladder.currentRestSeconds = ladder.startRest;
+    ladder.active = true;
+    applyLadderPrefill();
+    renderLadderStatus();
+    updateModeToggleVisuals();
+  });
+
+  function deactivateLadder() {
+    ladder.active = false;
+    renderLadderStatus();
+    updateModeToggleVisuals();
+  }
+
+  ladderResetBtn.addEventListener("click", function () {
+    ladder.active = false;
+    ladder.currentReps = parseInt(ladderStartRepsInput.value, 10) || 15;
+    ladder.currentRestSeconds = parseInt(ladderStartRestInput.value, 10) || 30;
+    ladderStatus.removeAttribute("data-complete");
+    renderLadderStatus();
+    updateModeToggleVisuals();
+  });
+
+  function advanceLadder() {
+    if (!ladder.active) return;
+    ladder.currentReps -= ladder.repStep;
+    if (ladder.currentReps < ladder.endReps - 0.001) {
+      ladder.active = false;
+      ladderStatus.setAttribute("data-complete", "1");
+      ladderStatus.textContent = t("wLadderCompleteAt") + " " + ladder.endReps + " " + (ladder.endReps === 1 ? t("wRep") : t("wReps")) + ".";
+      updateModeToggleVisuals();
+      return;
+    }
+    ladder.currentRestSeconds = Math.max(ladder.minRest, ladder.currentRestSeconds - ladder.restStep);
+    applyLadderPrefill();
+    renderLadderStatus();
+  }
+
+  // ---------- Rest duration + timer ----------
+  function setRestTarget(secs, chipEl) {
+    state.restTarget = secs;
+    restCustom.value = secs;
+    restChips.forEach(function (c) { c.classList.toggle("active", c === chipEl); });
+  }
+
+  restChips.forEach(function (chip) {
+    chip.addEventListener("click", function () { setRestTarget(parseInt(chip.getAttribute("data-secs"), 10), chip); });
+  });
+
+  restCustom.addEventListener("input", function () {
+    var v = parseInt(restCustom.value, 10);
+    state.restTarget = (v > 0) ? v : 0;
+    restChips.forEach(function (c) { c.classList.remove("active"); });
+  });
+
+  function fmtClock(totalSeconds) {
+    var s = Math.max(0, Math.round(totalSeconds));
+    var m = Math.floor(s / 60);
+    var r = s % 60;
+    return m + ":" + (r < 10 ? "0" : "") + r;
+  }
+
+  // ---------- Sound: synthesized buzz + alarm (Web Audio, no assets) ----------
+  var audioCtx = null;
+
+  function ensureAudio() {
+    if (!soundToggle.checked) return null;
+    if (!audioCtx) {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return null;
+      try { audioCtx = new Ctx(); } catch (e) { return null; }
+    }
+    if (audioCtx.state === "suspended") { audioCtx.resume().catch(function () {}); }
+    return audioCtx;
+  }
+
+  function beep(freq, durationMs, volume) {
+    var ctx = ensureAudio();
+    if (!ctx) return;
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = "square";
+    osc.frequency.value = freq;
+    var now = ctx.currentTime;
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(volume || 0.2, now + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + durationMs / 1000);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + durationMs / 1000 + 0.03);
+  }
+
+  function playBuzz() { beep(220, 110, 0.16); }
+  function playAlarm() {
+    [880, 660, 880].forEach(function (f, i) {
+      setTimeout(function () { beep(f, 170, 0.26); }, i * 190);
+    });
+  }
+
+  function restingLabel() {
+    var sep = (LANG === "ja" || LANG === "zh") ? "" : " ";
+    return [t("wRestingBefore"), exerciseLabel(timer.exerciseLabel), t("wRestSuffix")]
+      .filter(function (s) { return s; }).join(sep);
+  }
+
+  function startRestTimer(entryId, exerciseCanonical) {
+    stopRestTimer(true);
+    timer.running = true;
+    timer.entryId = entryId;
+    timer.targetSeconds = state.restTarget;
+    timer.remaining = state.restTarget;
+    timer.exerciseLabel = exerciseCanonical;
+    timerCard.classList.add("show");
+    timerCard.classList.remove("warn", "over");
+    timerLabel.textContent = restingLabel();
+    updateTimerDisplay();
+    timer.intervalId = setInterval(timerTick, 1000);
+  }
+
+  function timerTick() {
+    timer.remaining -= 1;
+    if (timer.remaining > 0 && timer.remaining <= 5) {
+      timerCard.classList.add("warn");
+      playBuzz();
+      updateTimerDisplay();
+    } else if (timer.remaining <= 0) {
+      timer.remaining = 0;
+      timeOutRestTimer();
+    } else {
+      updateTimerDisplay();
+    }
+  }
+
+  function timeOutRestTimer() {
+    if (timer.intervalId) { clearInterval(timer.intervalId); timer.intervalId = null; }
+    timer.running = false;
+    timerCard.classList.remove("warn");
+    timerCard.classList.add("over");
+    timerLabel.textContent = t("wRestCompleteMsg");
+    updateTimerDisplay();
+    playAlarm();
+  }
+
+  function updateTimerDisplay() {
+    timerCount.textContent = fmtClock(timer.remaining);
+    var pct = timer.targetSeconds > 0 ? Math.max(0, Math.min(100, (timer.remaining / timer.targetSeconds) * 100)) : 0;
+    timerRing.style.setProperty("--pct", pct);
+  }
+
+  function stopRestTimer(recordElapsed) {
+    if (!timer.entryId) {
+      if (timer.intervalId) clearInterval(timer.intervalId);
+      timer.intervalId = null;
+      timer.running = false;
+      timerCard.classList.remove("show", "warn", "over");
+      return;
+    }
+    if (recordElapsed) {
+      var elapsed = timer.targetSeconds - timer.remaining;
+      recordRestSeconds(timer.entryId, elapsed);
+    }
+    if (timer.intervalId) clearInterval(timer.intervalId);
+    timer.intervalId = null;
+    timer.running = false;
+    timer.entryId = null;
+    timerCard.classList.remove("show", "warn", "over");
+  }
+
+  timerMinus.addEventListener("click", function () {
+    if (!timer.running) return;
+    timer.remaining -= 15;
+    if (timer.remaining <= 0) {
+      timer.remaining = 0;
+      timeOutRestTimer();
+    } else {
+      timerCard.classList.toggle("warn", timer.remaining <= 5);
+      updateTimerDisplay();
+    }
+  });
+  timerPlus.addEventListener("click", function () {
+    if (timer.running) {
+      timer.remaining += 15;
+      timerCard.classList.toggle("warn", timer.remaining > 0 && timer.remaining <= 5);
+      updateTimerDisplay();
+    } else {
+      timer.remaining = 15;
+      timer.running = true;
+      timerCard.classList.remove("over");
+      timerLabel.textContent = restingLabel();
+      updateTimerDisplay();
+      timer.intervalId = setInterval(timerTick, 1000);
+    }
+  });
+  timerDone.addEventListener("click", function () { stopRestTimer(true); });
+
+  function recordRestSeconds(entryId, seconds) {
+    var entry = state.sets.find(function (s) { return s.id === entryId; });
+    if (!entry) return;
+    entry.restSeconds = Math.max(0, Math.round(seconds));
+    render();
+    persistUpdate(entryId, { restSeconds: entry.restSeconds });
+  }
+
+  // ---------- Helpers ----------
+  function todayKeyFn(d) {
+    d = d || new Date();
+    var y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, "0"), day = String(d.getDate()).padStart(2, "0");
+    return y + "-" + m + "-" + day;
+  }
+  function todayKey(d) { return todayKeyFn(d); }
+
+  function keyForYMD(y, m, d) {
+    return y + "-" + String(m + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+  }
+
+  function formatDateKey(key) {
+    var parts = key.split("-").map(Number);
+    var d = new Date(parts[0], parts[1] - 1, parts[2]);
+    return d.toLocaleDateString(LOCALE_MAP[LANG] || "en-US", { month: "short", day: "numeric", year: "numeric" });
+  }
+
+  function relativeLabel(key) {
+    var today = todayKeyFn();
+    var y = todayKeyFn(new Date(Date.now() - 86400000));
+    if (key === today) return t("wToday");
+    if (key === y) return t("wYesterday");
+    return "";
+  }
+
+  function bestWeightBefore(exercise, beforeLoggedAt) {
+    var best = 0;
+    state.sets.forEach(function (s) {
+      if (s.exercise === exercise && s.loggedAt < beforeLoggedAt && s.weight > best) best = s.weight;
+    });
+    return best;
+  }
+
+  function isPR(set) {
+    if (!set.weight) return false;
+    return set.weight >= bestWeightBefore(set.exercise, set.loggedAt) && set.weight > 0 &&
+      set.weight >= currentBest(set.exercise) && !hasEarlierEqualOrHigher(set);
+  }
+
+  function currentBest(exercise) {
+    var best = 0;
+    state.sets.forEach(function (s) { if (s.exercise === exercise && s.weight > best) best = s.weight; });
+    return best;
+  }
+
+  function hasEarlierEqualOrHigher(set) {
+    return state.sets.some(function (s) {
+      return s.exercise === set.exercise && s.id !== set.id && s.weight >= set.weight && s.loggedAt < set.loggedAt;
+    });
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  // Formats one set's weight/reps, honoring the bodyweight + optional
+  // added-weight case (e.g. weighted pull-ups) distinctly from a plain
+  // weighted lift or a pure bodyweight set.
+  function formatSetLabel(s) {
+    if (s.bodyweight) {
+      return s.weight > 0
+        ? t("wBW") + "+" + s.weight + s.unit + " × " + s.reps
+        : t("wBW") + " × " + s.reps;
+    }
+    return s.weight ? (s.weight + s.unit + " × " + s.reps) : (s.reps + " " + t("wReps"));
+  }
+
+  // ---------- Rendering ----------
+  function render() {
+    renderSessionStrip();
+    renderStats();
+    renderCalendar();
+    renderDayDetail();
+  }
+
+  function renderStats() {
+    var key = todayKeyFn();
+    var todays = state.sets.filter(function (s) { return s.dateKey === key; });
+    var sets = todays.length;
+    var reps = todays.reduce(function (a, s) { return a + s.reps; }, 0);
+    var vol = todays.reduce(function (a, s) { return a + s.volume; }, 0);
+    statSets.textContent = sets;
+    statReps.textContent = reps;
+    statVolume.textContent = vol >= 1000 ? (vol / 1000).toFixed(1) + "k" : vol;
+  }
+
+  function renderSessionStrip() {
+    var key = todayKeyFn();
+    var todays = state.sets.filter(function (s) { return s.dateKey === key; })
+      .sort(function (a, b) { return a.loggedAt.localeCompare(b.loggedAt); });
+    sessionStrip.innerHTML = "";
+    sessionStrip.classList.toggle("empty", todays.length === 0);
+    todays.forEach(function (s) {
+      var pill = document.createElement("div");
+      pill.className = "set-pill";
+      pill.innerHTML =
+        '<span class="ex">' + escapeHtml(exerciseLabel(s.exercise)) + '</span>' +
+        '<span class="vals">' + escapeHtml(formatSetLabel(s)) + '</span>' +
+        (s.restSeconds != null ? '<span class="rest">' + fmtClock(s.restSeconds) + '</span>' : '') +
+        (isPR(s) ? '<span class="pr">PR</span>' : '');
+      var del = document.createElement("button");
+      del.className = "del";
+      del.setAttribute("aria-label", "Delete set");
+      del.textContent = "✕";
+      del.addEventListener("click", function () { deleteSet(s.id); });
+      pill.appendChild(del);
+      sessionStrip.appendChild(pill);
+    });
+  }
+
+  // ---------- Calendar ----------
+  function weekdayShortNames() {
+    var base = Date.UTC(2023, 0, 1); // a Sunday
+    var arr = [];
+    var fmt = new Intl.DateTimeFormat(LOCALE_MAP[LANG] || "en-US", { weekday: "short", timeZone: "UTC" });
+    for (var i = 0; i < 7; i++) arr.push(fmt.format(new Date(base + i * 86400000)));
+    return arr;
+  }
+
+  function renderCalendar() {
+    var year = calendarMonth.getFullYear(), month = calendarMonth.getMonth();
+    calTitle.textContent = calendarMonth.toLocaleDateString(LOCALE_MAP[LANG] || "en-US", { month: "long", year: "numeric" });
+
+    calDowRow.innerHTML = "";
+    weekdayShortNames().forEach(function (d) {
+      var el = document.createElement("div");
+      el.className = "cal-dow";
+      el.textContent = d;
+      calDowRow.appendChild(el);
+    });
+
+    var datesWithData = {};
+    state.sets.forEach(function (s) { datesWithData[s.dateKey] = true; });
+
+    var firstWeekday = new Date(year, month, 1).getDay();
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    var todayStr = todayKeyFn();
+
+    calGrid.innerHTML = "";
+    for (var i = 0; i < firstWeekday; i++) {
+      var blank = document.createElement("div");
+      blank.className = "cal-day empty";
+      calGrid.appendChild(blank);
+    }
+    for (var d = 1; d <= daysInMonth; d++) {
+      var key = keyForYMD(year, month, d);
+      var cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "cal-day" +
+        (key === todayStr ? " today" : "") +
+        (datesWithData[key] ? " has-data" : "") +
+        (key === selectedDateKey ? " selected" : "");
+      cell.innerHTML = "<span>" + d + "</span>" + (datesWithData[key] ? '<span class="dot"></span>' : "");
+      (function (k) {
+        cell.addEventListener("click", function () {
+          selectedDateKey = k;
+          renderCalendar();
+          renderDayDetail();
+        });
+      })(key);
+      calGrid.appendChild(cell);
+    }
+  }
+
+  calPrev.addEventListener("click", function () {
+    calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1);
+    renderCalendar();
+  });
+  calNext.addEventListener("click", function () {
+    calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1);
+    renderCalendar();
+  });
+  calTodayBtn.addEventListener("click", function () {
+    var now = new Date();
+    calendarMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    selectedDateKey = todayKeyFn(now);
+    renderCalendar();
+    renderDayDetail();
+  });
+
+  function renderDayDetail() {
+    var setsForDay = state.sets.filter(function (s) { return s.dateKey === selectedDateKey; })
+      .sort(function (a, b) { return a.loggedAt.localeCompare(b.loggedAt); });
+
+    var rel = relativeLabel(selectedDateKey);
+    var headHtml = '<div class="day-detail-head"><div class="date">' + formatDateKey(selectedDateKey) +
+      (rel ? '<span class="rel">' + escapeHtml(rel) + '</span>' : '') + '</div>';
+
+    if (setsForDay.length === 0) {
+      headHtml += '</div>';
+      dayDetail.innerHTML = headHtml + '<div class="day-detail-body"><div class="day-empty">' + escapeHtml(t("dayEmptyMsg")) + '</div></div>';
+      return;
+    }
+
+    var totalSets = setsForDay.length;
+    var totalReps = setsForDay.reduce(function (a, s) { return a + s.reps; }, 0);
+    var totalVol = setsForDay.reduce(function (a, s) { return a + s.volume; }, 0);
+    headHtml += '<div class="day-totals"><span><b>' + totalSets + '</b> ' + escapeHtml(t("wSetsTotal")) + '</span><span><b>' + totalReps + '</b> ' + escapeHtml(t("wRepsTotalWord")) + '</span><span><b>' + totalVol.toLocaleString() + '</b> ' + escapeHtml(t("wVolWord")) + '</span></div></div>';
+
+    var byExercise = {};
+    setsForDay.forEach(function (s) { (byExercise[s.exercise] = byExercise[s.exercise] || []).push(s); });
+
+    var bodyHtml = '<div class="day-detail-body">';
+    Object.keys(byExercise).forEach(function (ex) {
+      var group = byExercise[ex];
+      var best = Math.max.apply(null, group.map(function (s) { return s.weight; }).concat(0));
+      var groupAllBW = group.every(function (s) { return s.bodyweight; });
+      var bestLabel = best > 0 ? (groupAllBW ? t("wBW") + "+" + best + group[0].unit : best + group[0].unit) : "";
+      bodyHtml += '<div class="ex-group"><div class="ex-name">' + escapeHtml(exerciseLabel(ex)) +
+        (bestLabel ? '<span class="best">' + escapeHtml(t("wBest")) + ' ' + escapeHtml(bestLabel) + '</span>' : '') + '</div><div class="set-list">';
+      group.forEach(function (s) {
+        var label = formatSetLabel(s);
+        bodyHtml += '<span class="set-chip' + (isPR(s) ? " pr" : "") + '">' + escapeHtml(label) +
+          (s.restSeconds != null ? ' <span class="rest">' + fmtClock(s.restSeconds) + '</span>' : '') +
+          (isPR(s) ? " PR" : "") + '</span>';
+      });
+      bodyHtml += '</div></div>';
+    });
+    bodyHtml += '</div>';
+
+    dayDetail.innerHTML = headHtml + bodyHtml;
+  }
+
+  // ---------- Logging ----------
+  function currentExerciseName() {
+    if (state.isCustom) return customInput.value.trim();
+    return state.selectedExercise;
+  }
+
+  function logSet() {
+    var exercise = currentExerciseName();
+    if (!exercise) { customInput.focus(); return; }
+    var reps = parseInt(repsInput.value, 10);
+    if (!reps || reps <= 0) { repsInput.focus(); return; }
+    var weight = parseFloat(weightInput.value) || 0;
+    var now = new Date();
+    var entry = {
+      id: "s" + now.getTime() + Math.random().toString(36).slice(2, 7),
+      exercise: exercise, weight: weight, unit: state.unit, reps: reps,
+      bodyweight: !!bwCheck.checked,
+      volume: weight * reps, loggedAt: now.toISOString(), dateKey: todayKeyFn(now),
+      restSeconds: null
+    };
+    var rampMatched = ramp.active && ramp.exercise === exercise;
+    var ladderMatched = ladder.active && ladder.exercise === exercise;
+
+    if (ladderMatched) { state.restTarget = ladder.currentRestSeconds; }
+
+    state.sets.push(entry);
+    // Logging today automatically brings the calendar/day-detail back to today.
+    selectedDateKey = entry.dateKey;
+    if (calendarMonth.getFullYear() !== now.getFullYear() || calendarMonth.getMonth() !== now.getMonth()) {
+      calendarMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+    render();
+    if (!rampMatched && !ladderMatched) { repsInput.value = ""; }
+    repsInput.focus();
+    persistAdd(entry);
+
+    if (autostartRest.checked && state.restTarget > 0) {
+      startRestTimer(entry.id, exercise);
+    }
+
+    if (rampMatched) advanceRamp();
+    if (ladderMatched) advanceLadder();
+  }
+
+  function deleteSet(id) {
+    state.sets = state.sets.filter(function (s) { return s.id !== id; });
+    if (timer.entryId === id) { timer.entryId = null; stopRestTimer(false); }
+    render();
+    persistDelete(id);
+  }
+
+  logBtn.addEventListener("click", logSet);
+  [weightInput, repsInput, customInput].forEach(function (el) {
+    el.addEventListener("keydown", function (e) { if (e.key === "Enter") logSet(); });
+  });
+
+  // ---------- Persistence (db capability, with local fallback) ----------
+  var LOCAL_KEY = "iron-ledger-sets-v1";
+
+  function loadLocal() {
+    try {
+      var raw = localStorage.getItem(LOCAL_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) { return []; }
+  }
+
+  function saveLocal() {
+    try { localStorage.setItem(LOCAL_KEY, JSON.stringify(state.sets)); } catch (e) {}
+  }
+
+  function persistAdd(entry) {
+    if (db) {
+      db.collection("sets").doc(entry.id).set(entry).catch(function () { saveLocal(); });
+    } else {
+      saveLocal();
+    }
+  }
+
+  function persistDelete(id) {
+    if (db) { db.doc("sets/" + id).delete().catch(function () {}); }
+    saveLocal();
+  }
+
+  function persistUpdate(id, patch) {
+    if (db) {
+      db.doc("sets/" + id).update(patch).catch(function () {
+        db.doc("sets/" + id).set(Object.assign({}, state.sets.find(function (s) { return s.id === id; }))).catch(function () {});
+      });
+    }
+    saveLocal();
+  }
+
+  // =========================================================================
+  // Settings: language + theme
+  // =========================================================================
+  function applyTranslations() {
+    document.querySelectorAll("[data-i18n]").forEach(function (el) {
+      el.textContent = t(el.getAttribute("data-i18n"));
+    });
+    document.querySelectorAll("[data-i18n-placeholder]").forEach(function (el) {
+      el.setAttribute("placeholder", t(el.getAttribute("data-i18n-placeholder")));
+    });
+    document.documentElement.setAttribute("lang", LANG);
+    document.body.className = document.body.className.replace(/\blang-\w+\b/g, "").trim() + " lang-" + LANG;
+    updateWeightLabel();
+    renderChips();
+    renderRampStatus();
+    renderLadderStatus();
+    render();
+    if (!db) { syncNote.textContent = t("noteLocal"); } else { syncNote.textContent = t("noteSynced"); }
+  }
+
+  function setLanguage(code) {
+    LANG = I18N[code] ? code : "en";
+    try { localStorage.setItem("iron-ledger-lang-v1", LANG); } catch (e) {}
+    applyTranslations();
+    renderLangGrid();
+  }
+
+  function renderLangGrid() {
+    langGrid.innerHTML = "";
+    LANGUAGES.forEach(function (l) {
+      var card = document.createElement("button");
+      card.type = "button";
+      card.className = "lang-card" + (LANG === l.code ? " selected" : "");
+      card.innerHTML = '<span class="native">' + escapeHtml(l.native) + '</span><span class="check"></span>';
+      card.addEventListener("click", function () { setLanguage(l.code); });
+      langGrid.appendChild(card);
+    });
+  }
+
+  function applyPalette(id) {
+    PALETTE = id;
+    if (id === "auto") {
+      document.documentElement.removeAttribute("data-palette");
+    } else {
+      document.documentElement.setAttribute("data-palette", id);
+    }
+    try { localStorage.setItem("iron-ledger-palette-v1", id); } catch (e) {}
+    renderThemeGrid();
+  }
+
+  function renderThemeGrid() {
+    themeGrid.innerHTML = "";
+
+    var autoCard = document.createElement("button");
+    autoCard.type = "button";
+    autoCard.className = "lang-card auto-card" + (PALETTE === "auto" ? " selected" : "");
+    autoCard.innerHTML = '<span class="native">' + escapeHtml(t("lblAuto")) + '</span><span class="check"></span>';
+    autoCard.addEventListener("click", function () { applyPalette("auto"); });
+    themeGrid.appendChild(autoCard);
+
+    THEMES.forEach(function (theme) {
+      var card = document.createElement("button");
+      card.type = "button";
+      card.className = "theme-card" + (PALETTE === theme.id ? " selected" : "");
+      card.innerHTML =
+        '<div class="theme-swatch">' + theme.c.map(function (c) { return '<span style="background:' + c + '"></span>'; }).join("") + '</div>' +
+        '<div class="tname">' + escapeHtml(theme.name) + '<span class="check"></span></div>';
+      card.addEventListener("click", function () { applyPalette(theme.id); });
+      themeGrid.appendChild(card);
+    });
+  }
+
+  function loadSettings() {
+    try {
+      var savedLang = localStorage.getItem("iron-ledger-lang-v1");
+      if (savedLang && I18N[savedLang]) LANG = savedLang;
+    } catch (e) {}
+    try {
+      var savedPalette = localStorage.getItem("iron-ledger-palette-v1");
+      if (savedPalette) {
+        PALETTE = savedPalette;
+        if (savedPalette !== "auto") document.documentElement.setAttribute("data-palette", savedPalette);
+      }
+    } catch (e) {}
+    try {
+      var savedSound = localStorage.getItem("iron-ledger-sound-v1");
+      if (savedSound !== null) soundToggle.checked = savedSound === "1";
+    } catch (e) {}
+    try {
+      var savedAutostart = localStorage.getItem("iron-ledger-autostart-v1");
+      if (savedAutostart !== null) autostartRest.checked = savedAutostart === "1";
+    } catch (e) {}
+    try {
+      var savedTab = localStorage.getItem("iron-ledger-tab-v1");
+      if (savedTab && views[savedTab]) switchTab(savedTab);
+    } catch (e) {}
+  }
+
+  soundToggle.addEventListener("change", function () {
+    try { localStorage.setItem("iron-ledger-sound-v1", soundToggle.checked ? "1" : "0"); } catch (e) {}
+  });
+  autostartRest.addEventListener("change", function () {
+    try { localStorage.setItem("iron-ledger-autostart-v1", autostartRest.checked ? "1" : "0"); } catch (e) {}
+  });
+
+  // =========================================================================
+  // Init
+  // =========================================================================
+  function init() {
+    loadSettings();
+    applyTranslations();
+    renderLangGrid();
+    renderThemeGrid();
+    state.sets = loadLocal();
+    render();
+
+    if (window.claude && typeof window.claude.use === "function") {
+      window.claude.use("db").then(function (handle) {
+        if (!handle) return;
+        db = handle;
+        syncNote.textContent = t("noteSynced");
+        db.collection("sets").orderBy("loggedAt", "desc").limit(1000).onSnapshot(function (snap) {
+          var docs = snap.docs.map(function (d) { return d.data(); }).filter(Boolean);
+          if (docs.length > 0 || snap.size === 0) {
+            state.sets = docs;
+            render();
+          }
+        }, function () { writable = false; });
+      }).catch(function () {});
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
