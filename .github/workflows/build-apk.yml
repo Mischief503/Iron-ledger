@@ -3,8 +3,10 @@ name: Build Android APK
 on:
   push:
     branches: [ main ]
+    paths-ignore: [ 'docs/**' ]   # the website (GitHub Pages) doesn't need a new APK
   pull_request:
     branches: [ main ]
+    paths-ignore: [ 'docs/**' ]
   workflow_dispatch: {}
 
 # One build at a time per branch. A newer push waits for the running build and

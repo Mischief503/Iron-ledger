@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+  // This page is Supabase's Site URL, so email links that don't name a page of their
+  // own (and links from older app versions) land here. Pass those on to the
+  // confirmation page, keeping everything after the address.
+  (function () {
+    if (/(^|[?#&])(access_token|refresh_token|code|token_hash|error|error_code|error_description)=/.test(location.search + location.hash)) {
+      location.replace("confirmed/" + location.search + location.hash);
+    }
+  })();
+</script>
+<title>Iron Ledger</title>
+<meta name="description" content="A workout log for Android. Log sets, reps and runs, keep your streak going, and challenge friends.">
+<meta property="og:title" content="Iron Ledger">
+<meta property="og:description" content="A workout log for Android. Log sets, reps and runs, keep your streak going, and challenge friends.">
+<meta name="theme-color" content="#EDE7DB" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#17140F" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Bebas+Neue&display=swap">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<div class="shell">
+  <header class="bar">
+    <a class="brand" href="./"><span class="mark" aria-hidden="true"></span><span class="wordmark">Iron Ledger</span></a>
+  </header>
+
+  <main>
+    <section class="hero">
+      <img class="app-icon app-icon-lg" src="icon.svg" alt="" width="72" height="72">
+      <h1>Every set, on the record</h1>
+      <p class="lead">Iron Ledger is a workout log for Android. Log sets, reps and runs, keep your streak going, and challenge friends.</p>
+    </section>
+
+    <section class="card">
+      <a class="btn" href="https://github.com/Mischief503/Iron-ledger/releases/download/latest/iron-ledger-latest.apk">Download for Android</a>
+      <p class="note">Open the downloaded file to install it. The first time, Android asks you to allow installs from your browser. New versions install over the old one and keep your data.</p>
+    </section>
+
+    <p class="aside"><a href="https://github.com/Mischief503/Iron-ledger">Source code on GitHub</a></p>
+  </main>
+</div>
+</body>
+</html>

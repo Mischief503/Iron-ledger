@@ -1,0 +1,106 @@
+/* Iron Ledger web pages (GitHub Pages, served from /docs).
+   Same tokens as the app (www/index.html) so the pages feel like the next screen of it. */
+:root {
+  --bg: #EDE7DB;
+  --surface: #FAF7F0;
+  --ink: #211D17;
+  --ink-dim: #6E6656;
+  --line: rgba(33,29,23,0.14);
+  --accent: #C9441E;
+  --accent-ink: #FFF7EE;
+  --shadow: 0 2px 6px rgba(33,29,23,0.05), 0 14px 30px -16px rgba(33,29,23,0.24);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17140F; --surface: #211C15; --ink: #F2ECDD; --ink-dim: #9C927D;
+    --line: rgba(242,236,221,0.12); --accent: #FF6A38; --accent-ink: #1A0D06;
+    --shadow: 0 2px 6px rgba(0,0,0,0.35), 0 16px 34px -16px rgba(0,0,0,0.55);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17140F; --surface: #211C15; --ink: #F2ECDD; --ink-dim: #9C927D;
+  --line: rgba(242,236,221,0.12); --accent: #FF6A38; --accent-ink: #1A0D06;
+  --shadow: 0 2px 6px rgba(0,0,0,0.35), 0 16px 34px -16px rgba(0,0,0,0.55);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; min-height: 100vh;
+  background: var(--bg); color: var(--ink);
+  font: 400 16px/1.5 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; }
+a:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; border-radius: 4px; }
+
+.shell {
+  max-width: 34rem; margin: 0 auto;
+  padding: 0 max(20px, env(safe-area-inset-right)) 56px max(20px, env(safe-area-inset-left));
+}
+
+/* Header: the app's brand lockup, hairline underneath */
+.bar { padding: max(18px, env(safe-area-inset-top)) 0 16px; border-bottom: 1px solid var(--line); }
+.brand { display: inline-flex; align-items: baseline; gap: 10px; text-decoration: none; }
+.brand .mark {
+  width: 10px; height: 26px; background: var(--accent); border-radius: 2px;
+  transform: skewX(-12deg); position: relative; top: 3px; flex-shrink: 0;
+}
+.wordmark { font: 400 30px/1 'Bebas Neue', 'Archivo Narrow', sans-serif; letter-spacing: 0.02em; }
+
+/* Hero */
+.hero { padding: 44px 0 0; }
+.glyph { display: block; width: 76px; height: auto; margin: 0 0 20px -2px; overflow: visible; }
+.glyph-ok path {
+  fill: none; stroke: var(--accent); stroke-width: 11; stroke-linecap: butt; stroke-linejoin: miter;
+  stroke-dasharray: 100; stroke-dashoffset: 0;
+  animation: il-draw 0.6s cubic-bezier(0.3, 0.7, 0.2, 1) 0.15s both;
+}
+.glyph-warn { fill: var(--ink); }
+@keyframes il-draw { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .glyph-ok path { animation: none; } }
+
+h1 {
+  margin: 0; font: 400 clamp(56px, 16.5vw, 92px)/0.9 'Bebas Neue', 'Archivo Narrow', sans-serif;
+  letter-spacing: 0.01em; text-wrap: balance;
+}
+.lead { margin: 18px 0 0; font-size: 18px; line-height: 1.5; max-width: 30em; }
+
+/* The "what to do next" card */
+.card {
+  margin-top: 32px; padding: 6px 20px 20px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow);
+}
+.steps { list-style: none; margin: 0; padding: 0; counter-reset: step; }
+.steps li {
+  counter-increment: step;
+  display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: 12px;
+  padding: 14px 0; font-size: 16px; line-height: 1.4;
+}
+.steps li + li { border-top: 1px solid var(--line); }
+.steps li::before { content: counter(step); font: 400 26px/1 'Bebas Neue', sans-serif; color: var(--accent); }
+.steps b { font-weight: 600; }
+.app-icon { display: block; width: 30px; height: 30px; border-radius: 8px; box-shadow: 0 0 0 1px var(--line); }
+.app-icon-lg { width: 72px; height: 72px; border-radius: 18px; margin: 0 0 22px; }
+
+.btn {
+  display: flex; align-items: center; justify-content: center; height: 54px; margin-top: 14px;
+  border-radius: 12px; background: var(--accent); color: var(--accent-ink); text-decoration: none;
+  font: 400 22px/1 'Bebas Neue', 'Archivo Narrow', sans-serif; letter-spacing: 0.05em;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:hover { filter: brightness(1.06); }
+.btn:active { filter: brightness(0.94); }
+.btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; border-radius: 12px; }
+
+.note { margin: 12px 0 0; font-size: 14px; line-height: 1.45; color: var(--ink-dim); }
+.aside { margin: 24px 0 0; font-size: 15px; color: var(--ink-dim); }
+.aside a, .note a { color: var(--accent); font-weight: 600; text-underline-offset: 3px; }
+.details { margin: 28px 0 0; font-size: 13px; color: var(--ink-dim); overflow-wrap: anywhere; }
+
+@media (min-width: 600px) {
+  .hero { padding-top: 72px; }
+}

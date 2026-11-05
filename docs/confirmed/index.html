@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<title>Thanks for signing up | Iron Ledger</title>
+<script>
+  // Supabase sends people here from the "confirm your email" link, after it has
+  // already confirmed the address. On success it adds sign-in tokens to the link
+  // (#access_token=... or ?code=...); on failure it adds #error=...&error_code=...
+  // This page only needs to know which of the two happened.
+  (function () {
+    var root = document.documentElement;
+    function parse(s) {
+      var out = {};
+      s.replace(/^[?#]/, "").split("&").forEach(function (part) {
+        if (!part) return;
+        var i = part.indexOf("=");
+        var k = i < 0 ? part : part.slice(0, i), v = i < 0 ? "" : part.slice(i + 1);
+        try { k = decodeURIComponent(k.replace(/\+/g, " ")); v = decodeURIComponent(v.replace(/\+/g, " ")); } catch (e) {}
+        out[k] = v;
+      });
+      return out;
+    }
+    var q = parse(location.search), h = parse(location.hash), p = {}, k;
+    for (k in q) p[k] = q[k];
+    for (k in h) p[k] = h[k];
+
+    var failed = !!(p.error || p.error_code || p.error_description);
+    var state = !failed ? "ok"
+      : (p.error_code === "otp_expired" || /expired/i.test(p.error_description || "")) ? "expired" : "error";
+    root.setAttribute("data-state", state);
+    if (failed && p.error_description) root.setAttribute("data-detail", p.error_description);
+    root.setAttribute("data-platform", /Android/i.test(navigator.userAgent) ? "android" : "other");
+    if (q.app === "missing") root.setAttribute("data-app", "missing");
+    if (state === "expired") document.title = "This link has expired | Iron Ledger";
+    if (state === "error") document.title = "This link didn't work | Iron Ledger";
+
+    // The page never uses the sign-in tokens, so take them out of the address bar
+    // and browser history straight away.
+    var secret = /(^|[?#&])(access_token|refresh_token|provider_token|provider_refresh_token|code|token|token_hash)=/;
+    if (secret.test(location.search) || secret.test(location.hash)) {
+      var keep = q.app ? "?app=" + encodeURIComponent(q.app) : "";
+      var mark = state === "ok" ? "#confirmed" : "#" + ["error", "error_code", "error_description"]
+        .filter(function (n) { return p[n]; })
+        .map(function (n) { return n + "=" + encodeURIComponent(p[n]); }).join("&");
+      try { history.replaceState(null, "", location.pathname + keep + mark); } catch (e) {}
+    }
+  })();
+</script>
+<meta name="theme-color" content="#EDE7DB" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#17140F" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Bebas+Neue&display=swap">
+<link rel="stylesheet" href="../site.css">
+<style>
+  /* Which copy shows: set on <html> by the script above. Without it, the thank-you shows. */
+  html[data-state="expired"] .only-ok, html[data-state="error"] .only-ok,
+  html:not([data-state="expired"]) .only-expired,
+  html:not([data-state="error"]) .only-error,
+  html:not([data-state="expired"]):not([data-state="error"]) .only-fail,
+  html:not([data-platform="android"]) .only-android,
+  html[data-platform="android"] .only-other,
+  html:not([data-app="missing"]) .only-missing { display: none; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="bar">
+    <a class="brand" href="../"><span class="mark" aria-hidden="true"></span><span class="wordmark">Iron Ledger</span></a>
+  </header>
+
+  <main>
+    <section class="hero">
+      <svg class="glyph glyph-ok only-ok" viewBox="0 0 64 52" aria-hidden="true"><path pathLength="100" d="M6 24 L24 42 L58 4"/></svg>
+      <svg class="glyph glyph-warn only-fail" viewBox="0 0 64 52" aria-hidden="true"><path d="M30 1h12l-7 33H23z"/><path d="M21.7 40h12l-2.3 11h-12z"/></svg>
+
+      <h1>
+        <span class="only-ok">Thanks for signing up</span>
+        <span class="only-expired">This link has expired</span>
+        <span class="only-error">This link didn't work</span>
+      </h1>
+
+      <p class="lead only-ok">Your email is confirmed and your Iron Ledger account is ready.</p>
+      <p class="lead only-expired">Confirmation links work once, for a limited time. If you already tapped this one, your account is confirmed and you can sign in.</p>
+      <p class="lead only-error">Your account may already be confirmed. Try signing in. If that doesn't work, get a new link from the app.</p>
+    </section>
+
+    <section class="card" aria-label="Next steps">
+      <ol class="steps">
+        <li><span>Open Iron Ledger<span class="only-other"> on your phone</span></span><img class="app-icon" src="../icon.svg" alt="" width="30" height="30"></li>
+        <li class="only-ok">Go to the Friends tab</li>
+        <li class="only-ok">Sign in with the email and password you signed up with</li>
+        <li class="only-fail">Go to the Friends tab and sign in</li>
+        <li class="only-fail"><span>If it says your email isn't confirmed, tap <b>Resend confirmation email</b> and use the newest link</span></li>
+      </ol>
+      <a class="btn only-android" id="openApp" href="../">Open Iron Ledger</a>
+      <p class="note only-android only-missing">Iron Ledger didn't open from here. Open it from your home screen instead.</p>
+    </section>
+
+    <p class="aside">Need the app? <a href="../">Get Iron Ledger for Android</a></p>
+    <p class="details only-fail" id="details"></p>
+  </main>
+</div>
+<script>
+  (function () {
+    var root = document.documentElement;
+    // Android: open the installed app. If it isn't installed (or is an older version
+    // without the link), the browser comes back here with ?app=missing.
+    var btn = document.getElementById("openApp");
+    var fallback = location.origin + location.pathname + "?app=missing" + location.hash;
+    btn.href = "intent://open#Intent;scheme=com.mischief503.ironledger;package=com.mischief503.ironledger;" +
+      "S.browser_fallback_url=" + encodeURIComponent(fallback) + ";end";
+
+    var detail = root.getAttribute("data-detail");
+    if (detail) document.getElementById("details").textContent = "Details: " + detail;
+  })();
+</script>
+</body>
+</html>
