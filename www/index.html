@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Iron Ledger</title>
+<script src="vendor/supabase-js-2.45.4.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');
 
@@ -362,6 +363,71 @@
   .switch input:checked + .slider { background: var(--accent); border-color: var(--accent); }
   .switch input:checked + .slider::before { transform: translateX(18px); background: var(--accent-ink); }
 
+  /* ---------- Friends ---------- */
+  .friends-auth { max-width: 420px; margin: 0 auto; }
+  .auth-card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; box-shadow: var(--shadow); }
+  .auth-tabs { display: flex; gap: 8px; margin-bottom: 4px; }
+  .auth-tab { flex: 1; padding: 9px 0; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface-2); color: var(--ink-dim); font-weight: 600; font-size: 13px; cursor: pointer; }
+  .auth-tab.active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .auth-msg { font-size: 12.5px; margin-top: 10px; min-height: 16px; color: var(--ink-dim); }
+  .auth-msg.err { color: var(--accent); }
+  .auth-msg.ok { color: var(--good); }
+  .auth-hint { font-size: 11.5px; color: var(--ink-dim); text-align: center; margin-top: 14px; }
+
+  .fp-row { display: flex; align-items: center; gap: 12px; }
+  .fp-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 17px; flex-shrink: 0; font-family: 'Archivo', sans-serif; }
+  .fp-info { flex: 1; min-width: 0; }
+  .fp-username { font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 6px; }
+  .fp-edit-btn { border: none; background: transparent; color: var(--ink-dim); cursor: pointer; font-size: 13px; padding: 2px; flex-shrink: 0; }
+  .fp-edit-btn:hover { color: var(--accent); }
+  .fp-signout-btn { border: 1.5px solid var(--line); background: transparent; color: var(--ink-dim); border-radius: 8px; padding: 7px 12px; font-size: 12px; font-weight: 600; cursor: pointer; flex-shrink: 0; }
+  .fp-username-edit { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .fp-username-edit input { font-family: 'Archivo', sans-serif; font-size: 14px; padding: 6px 8px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--surface-2); color: var(--ink); width: 140px; }
+  .fp-code-row { display: flex; align-items: center; gap: 10px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .fp-code-label { font-size: 10px; letter-spacing: 0.08em; color: var(--ink-dim); font-weight: 600; }
+  .fp-code { font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 600; letter-spacing: 0.06em; flex: 1; }
+  .fp-copy-btn { border: 1.5px solid var(--line); background: var(--surface-2); color: var(--ink); border-radius: 8px; padding: 7px 12px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .fp-stats-row { display: flex; gap: 22px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .fp-stat .num { font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 600; }
+  .fp-stat .lbl { font-size: 10px; color: var(--ink-dim); letter-spacing: 0.06em; }
+
+  .add-friend-row { display: flex; gap: 8px; margin-top: 4px; }
+  .add-friend-row input { flex: 1; font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; font-size: 15px; padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface-2); color: var(--ink); min-width: 0; }
+
+  .friend-row, .request-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .friend-row:last-child, .request-row:last-child { border-bottom: none; }
+  .fr-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--surface-2); color: var(--ink); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+  .fr-info { flex: 1; min-width: 0; }
+  .fr-name { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fr-streak { font-size: 11.5px; color: var(--ink-dim); font-family: 'IBM Plex Mono', monospace; }
+  .fr-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .fr-btn { border: 1.5px solid var(--line); background: transparent; color: var(--ink); border-radius: 8px; padding: 7px 11px; font-size: 11.5px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .fr-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .fr-btn.accept { background: var(--good-bg); color: var(--good); border-color: transparent; }
+  .fr-btn.decline { color: var(--ink-dim); }
+
+  .empty-note { text-align: center; color: var(--ink-dim); padding: 18px 10px; font-size: 13px; }
+
+  .challenge-card { display: flex; flex-direction: column; gap: 10px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .challenge-card:last-child { border-bottom: none; }
+  .challenge-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .challenge-vs { font-weight: 600; font-size: 13.5px; }
+  .challenge-meta { font-size: 11px; color: var(--ink-dim); }
+  .challenge-progress { display: flex; flex-direction: column; gap: 6px; }
+  .cp-row { display: flex; align-items: center; gap: 8px; }
+  .cp-name { font-size: 11.5px; width: 76px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cp-bar { flex: 1; height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+  .cp-fill { height: 100%; background: var(--accent); border-radius: 999px; }
+  .cp-val { font-size: 11.5px; font-family: 'IBM Plex Mono', monospace; width: 48px; text-align: right; flex-shrink: 0; }
+  .cp-row.lead .cp-fill { background: var(--good); }
+  .cp-row.lead .cp-name, .cp-row.lead .cp-val { color: var(--good); font-weight: 700; }
+
+  .back-link { display: inline-flex; align-items: center; gap: 6px; border: none; background: transparent; color: var(--ink-dim); font-size: 13px; font-weight: 600; cursor: pointer; padding: 0; margin-bottom: 14px; }
+  .back-link:hover { color: var(--accent); }
+  .back-link svg { width: 14px; height: 14px; }
+
+  .fc-friend-name { font-weight: 700; font-size: 15px; margin-bottom: 14px; }
+
   @media (max-width: 480px) {
     .today-stats { gap: 0; }
     .stat { padding: 0 8px; }
@@ -601,6 +667,104 @@
     <p class="sync-note" id="syncNote"></p>
   </section>
 
+  <!-- ================= FRIENDS TAB ================= -->
+  <section class="view" id="view-friends">
+    <p class="eyebrow" data-i18n="eyebrowFriends">FRIENDS</p>
+
+    <div id="friendsAuth" class="friends-auth">
+      <div class="auth-card">
+        <div class="auth-tabs">
+          <button type="button" class="auth-tab active" id="authTabSignin" data-i18n="btnSignIn">Sign In</button>
+          <button type="button" class="auth-tab" id="authTabSignup" data-i18n="btnSignUp">Sign Up</button>
+        </div>
+        <div class="field" style="margin-top:14px;">
+          <label data-i18n="lblEmail">Email</label>
+          <input type="email" id="authEmail" autocomplete="email" inputmode="email" autocapitalize="off">
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label data-i18n="lblPassword">Password</label>
+          <input type="password" id="authPassword" autocomplete="current-password">
+        </div>
+        <button type="button" class="log-btn-full" id="authSubmitBtn" style="margin-top:14px;" data-i18n="btnSignIn">Sign In</button>
+        <p class="auth-msg" id="authMsg"></p>
+        <p class="auth-hint" id="authHint" data-i18n="authHintSignin">New here? Tap Sign Up above.</p>
+      </div>
+    </div>
+
+    <div id="friendsHome" style="display:none;">
+      <div class="cal-card" id="profileCard"></div>
+
+      <div class="cal-card">
+        <p class="eyebrow" data-i18n="eyebrowAddFriend">ADD A FRIEND</p>
+        <div class="add-friend-row">
+          <input type="text" id="addFriendInput" maxlength="7" data-i18n-placeholder="phFriendCode" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false">
+          <button type="button" class="mode-btn primary" id="addFriendBtn" data-i18n="btnAdd">Add</button>
+        </div>
+        <p class="auth-msg" id="addFriendMsg"></p>
+      </div>
+
+      <div class="cal-card" id="requestsCard" style="display:none;">
+        <p class="eyebrow" data-i18n="eyebrowRequests">FRIEND REQUESTS</p>
+        <div id="requestsList"></div>
+      </div>
+
+      <div class="cal-card">
+        <p class="eyebrow" data-i18n="eyebrowFriendsList">YOUR FRIENDS</p>
+        <div id="friendsList"></div>
+      </div>
+
+      <div class="cal-card">
+        <p class="eyebrow" data-i18n="eyebrowChallenges">CHALLENGES</p>
+        <div id="challengesList"></div>
+      </div>
+    </div>
+
+    <div id="friendsCalendarView" style="display:none;">
+      <button type="button" class="back-link" id="fcBackBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+        <span data-i18n="btnBack">Back</span>
+      </button>
+      <div class="fc-friend-name" id="fcFriendName"></div>
+      <div class="cal-card">
+        <div class="cal-head">
+          <button type="button" class="cal-nav-btn" id="fcPrev" aria-label="Previous month">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+          </button>
+          <div class="cal-title" id="fcTitle"></div>
+          <button type="button" class="cal-nav-btn" id="fcNext" aria-label="Next month">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+        <div class="cal-dow-row" id="fcDowRow"></div>
+        <div class="cal-grid" id="fcGrid"></div>
+      </div>
+      <div class="day-detail" id="fcDayDetail"></div>
+    </div>
+
+    <div id="friendsChallengeForm" style="display:none;">
+      <button type="button" class="back-link" id="ncBackBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+        <span data-i18n="btnBack">Back</span>
+      </button>
+      <div class="cal-card">
+        <p class="eyebrow" data-i18n="eyebrowNewChallenge">NEW CHALLENGE</p>
+        <p class="challenge-vs" id="ncOpponentName" style="margin-bottom:14px;"></p>
+        <div class="field">
+          <label data-i18n="lblMetric">Metric</label>
+          <div class="chips" id="ncMetricChips"></div>
+        </div>
+        <div class="field" style="margin-top:4px;">
+          <label data-i18n="lblDuration">Duration</label>
+          <div class="chips" id="ncDurationChips"></div>
+        </div>
+        <button type="button" class="log-btn-full" id="ncSendBtn" style="margin-top:14px;" data-i18n="btnSendChallenge">Send Challenge</button>
+        <p class="auth-msg" id="ncMsg"></p>
+      </div>
+    </div>
+
+    <p class="sync-note" id="friendsSyncNote" data-i18n="noteFriendsLocal">Sign in to add friends and see their workouts.</p>
+  </section>
+
   <!-- ================= SETTINGS TAB ================= -->
   <section class="view" id="view-settings">
     <div class="settings-block">
@@ -638,6 +802,10 @@
     <button type="button" class="tab-btn" data-tab="history">
       <span class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg></span>
       <span data-i18n="tabHistory">History</span>
+    </button>
+    <button type="button" class="tab-btn" data-tab="friends">
+      <span class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+      <span data-i18n="tabFriends">Friends</span>
     </button>
     <button type="button" class="tab-btn" data-tab="settings">
       <span class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="2"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="2"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="11" cy="18" r="2"/></svg></span>
@@ -685,7 +853,29 @@
       lblLanguage:"Language", lblTheme:"Theme", lblAuto:"Auto (match device)",
       lblSound:"Sound", lblAutostart:"Start timer automatically when you log a set",
       noteSynced:"Synced — your log is saved and follows you across devices.", noteLocal:"Saving locally in this browser only.",
-      wRep:"rep", wReps:"reps"
+      wRep:"rep", wReps:"reps",
+      tabFriends:"Friends", eyebrowFriends:"FRIENDS",
+      btnSignIn:"Sign In", btnSignUp:"Sign Up", lblEmail:"Email", lblPassword:"Password",
+      authHintSignin:"New here? Tap Sign Up above.", authHintSignup:"Already have an account? Tap Sign In above.",
+      authErrFields:"Enter an email and password.", authErrGeneric:"Something went wrong. Try again.",
+      authCheckEmail:"Check your email to confirm your account, then sign in.",
+      eyebrowAddFriend:"ADD A FRIEND", phFriendCode:"ABC1234", btnAdd:"Add",
+      addFriendOk:"Friend request sent.", addFriendErrNotFound:"No profile found with that code.",
+      addFriendErrSelf:"That's your own code.", addFriendErrDupe:"You're already connected, or a request is pending.",
+      eyebrowRequests:"FRIEND REQUESTS", wIncoming:"Incoming", wOutgoing:"Sent", wPending:"Pending",
+      btnAccept:"Accept", btnDecline:"Decline", btnCancel:"Cancel",
+      eyebrowFriendsList:"YOUR FRIENDS", emptyFriends:"No friends yet — add one with their code above.",
+      wDayStreak:"day streak", wBestStreak:"best", btnViewCalendar:"Calendar", btnChallenge:"Challenge",
+      eyebrowChallenges:"CHALLENGES", emptyChallenges:"No challenges yet.",
+      metricVolume:"Volume", metricReps:"Reps", metricSets:"Sets", metricStreak:"Streak",
+      wDaysLeft:"days left", wDayLeft:"day left", wEnded:"Ended", wVersus:"vs",
+      btnSendChallenge:"Send Challenge", eyebrowNewChallenge:"NEW CHALLENGE", lblMetric:"Metric", lblDuration:"Duration",
+      wDays3:"3 days", wDays7:"7 days", wDays14:"14 days", wDays30:"30 days",
+      btnBack:"Back", lblUsername:"Username", btnSave:"Save", usernameErrFormat:"3-20 letters, numbers or underscores.",
+      usernameErrTaken:"That username is taken.", btnCopy:"Copy", btnCopied:"Copied", wYou:"You",
+      friendCalEmpty:"No sets logged this day.", noteFriendsLocal:"Sign in to add friends and see their workouts.",
+      challengeStatusPending:"Waiting for them to accept", challengeStatusPendingYou:"Wants to challenge you",
+      wWinning:"ahead", wTied:"tied", btnSignOut:"Sign Out", lblYourCode:"YOUR CODE"
     },
     es: {
       tabReps:"Reps", tabHistory:"Historial", tabSettings:"Ajustes",
@@ -1031,7 +1221,7 @@
   // Tabs
   // =========================================================================
   var tabBtns = document.querySelectorAll(".tab-btn");
-  var views = { reps: document.getElementById("view-reps"), history: document.getElementById("view-history"), settings: document.getElementById("view-settings") };
+  var views = { reps: document.getElementById("view-reps"), history: document.getElementById("view-history"), friends: document.getElementById("view-friends"), settings: document.getElementById("view-settings") };
 
   function switchTab(name) {
     Object.keys(views).forEach(function (k) { views[k].classList.toggle("active", k === name); });
@@ -1436,31 +1626,35 @@
     return "";
   }
 
-  function bestWeightBefore(exercise, beforeLoggedAt) {
+  function bestWeightBeforeIn(sets, exercise, beforeLoggedAt) {
     var best = 0;
-    state.sets.forEach(function (s) {
+    sets.forEach(function (s) {
       if (s.exercise === exercise && s.loggedAt < beforeLoggedAt && s.weight > best) best = s.weight;
     });
     return best;
   }
+  function bestWeightBefore(exercise, beforeLoggedAt) { return bestWeightBeforeIn(state.sets, exercise, beforeLoggedAt); }
 
-  function isPR(set) {
-    if (!set.weight) return false;
-    return set.weight >= bestWeightBefore(set.exercise, set.loggedAt) && set.weight > 0 &&
-      set.weight >= currentBest(set.exercise) && !hasEarlierEqualOrHigher(set);
-  }
-
-  function currentBest(exercise) {
+  function currentBestIn(sets, exercise) {
     var best = 0;
-    state.sets.forEach(function (s) { if (s.exercise === exercise && s.weight > best) best = s.weight; });
+    sets.forEach(function (s) { if (s.exercise === exercise && s.weight > best) best = s.weight; });
     return best;
   }
+  function currentBest(exercise) { return currentBestIn(state.sets, exercise); }
 
-  function hasEarlierEqualOrHigher(set) {
-    return state.sets.some(function (s) {
+  function hasEarlierEqualOrHigherIn(sets, set) {
+    return sets.some(function (s) {
       return s.exercise === set.exercise && s.id !== set.id && s.weight >= set.weight && s.loggedAt < set.loggedAt;
     });
   }
+  function hasEarlierEqualOrHigher(set) { return hasEarlierEqualOrHigherIn(state.sets, set); }
+
+  function isPRIn(sets, set) {
+    if (!set.weight) return false;
+    return set.weight >= bestWeightBeforeIn(sets, set.exercise, set.loggedAt) && set.weight > 0 &&
+      set.weight >= currentBestIn(sets, set.exercise) && !hasEarlierEqualOrHigherIn(sets, set);
+  }
+  function isPR(set) { return isPRIn(state.sets, set); }
 
   function escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, function (c) {
@@ -1712,11 +1906,13 @@
     } else {
       saveLocal();
     }
+    sbPushSet(entry);
   }
 
   function persistDelete(id) {
     if (db) { db.doc("sets/" + id).delete().catch(function () {}); }
     saveLocal();
+    sbDeleteSet(id);
   }
 
   function persistUpdate(id, patch) {
@@ -1726,6 +1922,729 @@
       });
     }
     saveLocal();
+  }
+
+  // =========================================================================
+  // Friends (Supabase) — profiles, friend codes, requests, streaks, challenges
+  // =========================================================================
+  var SUPABASE_URL = "https://bnlwclqhhyftekzjlkff.supabase.co";
+  var SUPABASE_KEY = "sb_publishable_Qn-MdbDkjtrDWBCCWwTOag_RGUzGRI0";
+  var sb = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+  var sbUser = null;
+  var sbProfile = null;
+  var sbFriends = [];
+  var sbIncoming = [];
+  var sbOutgoing = [];
+  var sbChallenges = [];
+  var authMode = "signin";
+  var editingUsername = false;
+  var pendingChallengeOpponent = null;
+  var ncSelectedMetric = "volume";
+  var ncSelectedDuration = 7;
+  var CHALLENGE_METRICS = ["volume", "reps", "sets", "streak"];
+  var CHALLENGE_DURATIONS = [3, 7, 14, 30];
+  var fcState = { friendId: null, friendName: "", sets: [], month: new Date(), selectedDateKey: todayKeyFn() };
+
+  var friendsAuth = document.getElementById("friendsAuth");
+  var friendsHome = document.getElementById("friendsHome");
+  var friendsCalendarView = document.getElementById("friendsCalendarView");
+  var friendsChallengeForm = document.getElementById("friendsChallengeForm");
+  var friendsSyncNote = document.getElementById("friendsSyncNote");
+
+  var authTabSignin = document.getElementById("authTabSignin");
+  var authTabSignup = document.getElementById("authTabSignup");
+  var authEmail = document.getElementById("authEmail");
+  var authPassword = document.getElementById("authPassword");
+  var authSubmitBtn = document.getElementById("authSubmitBtn");
+  var authMsg = document.getElementById("authMsg");
+  var authHint = document.getElementById("authHint");
+
+  var profileCard = document.getElementById("profileCard");
+  var addFriendInput = document.getElementById("addFriendInput");
+  var addFriendBtn = document.getElementById("addFriendBtn");
+  var addFriendMsg = document.getElementById("addFriendMsg");
+  var requestsCard = document.getElementById("requestsCard");
+  var requestsList = document.getElementById("requestsList");
+  var friendsListEl = document.getElementById("friendsList");
+  var challengesList = document.getElementById("challengesList");
+
+  var fcBackBtn = document.getElementById("fcBackBtn");
+  var fcFriendNameEl = document.getElementById("fcFriendName");
+  var fcTitle = document.getElementById("fcTitle");
+  var fcDowRow = document.getElementById("fcDowRow");
+  var fcGrid = document.getElementById("fcGrid");
+  var fcPrev = document.getElementById("fcPrev");
+  var fcNext = document.getElementById("fcNext");
+  var fcDayDetail = document.getElementById("fcDayDetail");
+
+  var ncBackBtn = document.getElementById("ncBackBtn");
+  var ncOpponentName = document.getElementById("ncOpponentName");
+  var ncMetricChips = document.getElementById("ncMetricChips");
+  var ncDurationChips = document.getElementById("ncDurationChips");
+  var ncSendBtn = document.getElementById("ncSendBtn");
+  var ncMsg = document.getElementById("ncMsg");
+
+  function avatarLetter(name) { return (name || "?").trim().charAt(0).toUpperCase(); }
+
+  function showFriendsAuth() {
+    friendsAuth.style.display = "";
+    friendsHome.style.display = "none";
+    friendsCalendarView.style.display = "none";
+    friendsChallengeForm.style.display = "none";
+    friendsSyncNote.style.display = "";
+  }
+  function showFriendsHome() {
+    friendsAuth.style.display = "none";
+    friendsHome.style.display = "";
+    friendsCalendarView.style.display = "none";
+    friendsChallengeForm.style.display = "none";
+    friendsSyncNote.style.display = "none";
+  }
+
+  function setAuthMode(mode) {
+    authMode = mode;
+    authTabSignin.classList.toggle("active", mode === "signin");
+    authTabSignup.classList.toggle("active", mode === "signup");
+    authSubmitBtn.textContent = mode === "signin" ? t("btnSignIn") : t("btnSignUp");
+    authHint.textContent = mode === "signin" ? t("authHintSignin") : t("authHintSignup");
+    authPassword.setAttribute("autocomplete", mode === "signin" ? "current-password" : "new-password");
+    authMsg.textContent = "";
+    authMsg.className = "auth-msg";
+  }
+  authTabSignin.addEventListener("click", function () { setAuthMode("signin"); });
+  authTabSignup.addEventListener("click", function () { setAuthMode("signup"); });
+
+  authSubmitBtn.addEventListener("click", function () {
+    if (!sb) { authMsg.textContent = t("authErrGeneric"); authMsg.className = "auth-msg err"; return; }
+    var email = authEmail.value.trim();
+    var password = authPassword.value;
+    if (!email || !password) { authMsg.textContent = t("authErrFields"); authMsg.className = "auth-msg err"; return; }
+    authSubmitBtn.disabled = true;
+    authMsg.textContent = ""; authMsg.className = "auth-msg";
+    var p = authMode === "signin"
+      ? sb.auth.signInWithPassword({ email: email, password: password })
+      : sb.auth.signUp({ email: email, password: password });
+    p.then(function (res) {
+      authSubmitBtn.disabled = false;
+      if (res.error) {
+        authMsg.textContent = res.error.message || t("authErrGeneric");
+        authMsg.className = "auth-msg err";
+        return;
+      }
+      if (authMode === "signup" && res.data && !res.data.session) {
+        authMsg.textContent = t("authCheckEmail");
+        authMsg.className = "auth-msg ok";
+      }
+    }).catch(function () {
+      authSubmitBtn.disabled = false;
+      authMsg.textContent = t("authErrGeneric");
+      authMsg.className = "auth-msg err";
+    });
+  });
+  [authEmail, authPassword].forEach(function (el) {
+    el.addEventListener("keydown", function (e) { if (e.key === "Enter") authSubmitBtn.click(); });
+  });
+
+  function initFriends() {
+    if (!sb) { friendsSyncNote.textContent = t("authErrGeneric"); return; }
+    sb.auth.onAuthStateChange(function (event, session) {
+      sbUser = session ? session.user : null;
+      if (sbUser) { showFriendsHome(); loadFriendsData(); }
+      else { sbProfile = null; showFriendsAuth(); }
+    });
+  }
+
+  function loadFriendsData() {
+    loadOrCreateProfile().then(function () {
+      renderProfileCard();
+      syncLocalSetsToSupabase();
+      loadFriendRequests();
+      loadFriends();
+      loadChallenges();
+    });
+  }
+
+  function fetchStreak(userId) {
+    return sb.rpc("get_user_streak", { target_user: userId }).then(function (res) {
+      if (res.error || !res.data || !res.data.length) return { current_streak: 0, best_streak: 0 };
+      return res.data[0];
+    }).catch(function () { return { current_streak: 0, best_streak: 0 }; });
+  }
+
+  function loadOrCreateProfile() {
+    return sb.from("profiles").select("id, username, friend_code").eq("id", sbUser.id).maybeSingle().then(function (res) {
+      sbProfile = (res && res.data) || null;
+      if (sbProfile) {
+        return fetchStreak(sbProfile.id).then(function (streak) { sbProfile._streak = streak; });
+      }
+    }).catch(function () {});
+  }
+
+  function renderProfileCard() {
+    if (!sbProfile) {
+      profileCard.innerHTML = '<div class="empty-note">' + escapeHtml(t("authErrGeneric")) + '</div>';
+      return;
+    }
+    var streak = sbProfile._streak || { current_streak: 0, best_streak: 0 };
+    if (editingUsername) {
+      profileCard.innerHTML =
+        '<div class="fp-row">' +
+          '<div class="fp-avatar">' + escapeHtml(avatarLetter(sbProfile.username)) + '</div>' +
+          '<div class="fp-info">' +
+            '<div class="fp-username-edit">' +
+              '<input type="text" id="fpUsernameInput" maxlength="20" value="' + escapeHtml(sbProfile.username) + '">' +
+              '<button type="button" class="mode-btn primary" id="fpSaveUsernameBtn">' + escapeHtml(t("btnSave")) + '</button>' +
+              '<button type="button" class="fp-edit-btn" id="fpCancelUsernameBtn" aria-label="Cancel">✕</button>' +
+            '</div>' +
+            '<p class="auth-msg" id="fpUsernameMsg"></p>' +
+          '</div>' +
+        '</div>';
+      var inp = document.getElementById("fpUsernameInput");
+      document.getElementById("fpSaveUsernameBtn").addEventListener("click", saveUsername);
+      document.getElementById("fpCancelUsernameBtn").addEventListener("click", function () { editingUsername = false; renderProfileCard(); });
+      inp.addEventListener("keydown", function (e) { if (e.key === "Enter") saveUsername(); });
+      inp.focus(); inp.select();
+      return;
+    }
+    profileCard.innerHTML =
+      '<div class="fp-row">' +
+        '<div class="fp-avatar">' + escapeHtml(avatarLetter(sbProfile.username)) + '</div>' +
+        '<div class="fp-info"><div class="fp-username">' + escapeHtml(sbProfile.username) +
+          '<button type="button" class="fp-edit-btn" id="fpEditBtn" aria-label="Edit username">✎</button>' +
+        '</div></div>' +
+        '<button type="button" class="fp-signout-btn" id="fpSignOutBtn">' + escapeHtml(t("btnSignOut")) + '</button>' +
+      '</div>' +
+      '<div class="fp-code-row">' +
+        '<span class="fp-code-label">' + escapeHtml(t("lblYourCode")) + '</span>' +
+        '<span class="fp-code">' + escapeHtml(sbProfile.friend_code) + '</span>' +
+        '<button type="button" class="fp-copy-btn" id="fpCopyBtn">' + escapeHtml(t("btnCopy")) + '</button>' +
+      '</div>' +
+      '<div class="fp-stats-row">' +
+        '<div class="fp-stat"><div class="num">' + streak.current_streak + '</div><div class="lbl">' + escapeHtml(t("wDayStreak")) + '</div></div>' +
+        '<div class="fp-stat"><div class="num">' + streak.best_streak + '</div><div class="lbl">' + escapeHtml(t("wBestStreak")) + '</div></div>' +
+      '</div>';
+    document.getElementById("fpEditBtn").addEventListener("click", function () { editingUsername = true; renderProfileCard(); });
+    document.getElementById("fpSignOutBtn").addEventListener("click", function () { sb.auth.signOut(); });
+    document.getElementById("fpCopyBtn").addEventListener("click", function () {
+      var btn = document.getElementById("fpCopyBtn");
+      var done = function () { btn.textContent = t("btnCopied"); setTimeout(function () { btn.textContent = t("btnCopy"); }, 1500); };
+      if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(sbProfile.friend_code).then(done).catch(done); }
+      else { done(); }
+    });
+  }
+
+  function saveUsername() {
+    var inp = document.getElementById("fpUsernameInput");
+    var msg = document.getElementById("fpUsernameMsg");
+    var val = inp.value.trim();
+    if (!/^[A-Za-z0-9_]{3,20}$/.test(val)) {
+      msg.textContent = t("usernameErrFormat"); msg.className = "auth-msg err"; return;
+    }
+    sb.from("profiles").update({ username: val }).eq("id", sbUser.id).then(function (res) {
+      if (res.error) {
+        msg.textContent = res.error.code === "23505" ? t("usernameErrTaken") : (res.error.message || t("authErrGeneric"));
+        msg.className = "auth-msg err";
+        return;
+      }
+      sbProfile.username = val;
+      editingUsername = false;
+      renderProfileCard();
+    }).catch(function () { msg.textContent = t("authErrGeneric"); msg.className = "auth-msg err"; });
+  }
+
+  // ---------- Add friend by code ----------
+  addFriendInput.addEventListener("input", function () {
+    addFriendInput.value = addFriendInput.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  });
+  addFriendInput.addEventListener("keydown", function (e) { if (e.key === "Enter") addFriendBtn.click(); });
+
+  addFriendBtn.addEventListener("click", function () {
+    var code = addFriendInput.value.trim().toUpperCase();
+    addFriendMsg.textContent = ""; addFriendMsg.className = "auth-msg";
+    if (!code) return;
+    if (sbProfile && code === sbProfile.friend_code) {
+      addFriendMsg.textContent = t("addFriendErrSelf"); addFriendMsg.className = "auth-msg err"; return;
+    }
+    addFriendBtn.disabled = true;
+    function fail(key) {
+      addFriendBtn.disabled = false;
+      addFriendMsg.textContent = t(key); addFriendMsg.className = "auth-msg err";
+    }
+    function ok() {
+      addFriendBtn.disabled = false;
+      addFriendMsg.textContent = t("addFriendOk"); addFriendMsg.className = "auth-msg ok";
+      addFriendInput.value = "";
+      loadFriendRequests(); loadFriends();
+    }
+    sb.from("profiles").select("id, username, friend_code").eq("friend_code", code).maybeSingle().then(function (res) {
+      if (res.error || !res.data) { fail("addFriendErrNotFound"); return; }
+      var target = res.data;
+      sb.from("friend_requests").select("*")
+        .or("and(requester_id.eq." + sbUser.id + ",addressee_id.eq." + target.id + "),and(requester_id.eq." + target.id + ",addressee_id.eq." + sbUser.id + ")")
+        .then(function (res2) {
+          var existing = (res2.data || [])[0];
+          if (!existing) {
+            sb.from("friend_requests").insert({ requester_id: sbUser.id, addressee_id: target.id })
+              .then(function (r) { if (r.error) fail("addFriendErrDupe"); else ok(); })
+              .catch(function () { fail("addFriendErrDupe"); });
+            return;
+          }
+          if (existing.status === "accepted") { fail("addFriendErrDupe"); return; }
+          if (existing.status === "pending") {
+            if (existing.requester_id === target.id) {
+              sb.from("friend_requests").update({ status: "accepted", responded_at: new Date().toISOString() }).eq("id", existing.id)
+                .then(function (r) { if (r.error) fail("authErrGeneric"); else ok(); })
+                .catch(function () { fail("authErrGeneric"); });
+            } else {
+              fail("addFriendErrDupe");
+            }
+            return;
+          }
+          // declined previously — clear it and send a fresh request from us
+          sb.from("friend_requests").delete().eq("id", existing.id).then(function () {
+            sb.from("friend_requests").insert({ requester_id: sbUser.id, addressee_id: target.id })
+              .then(function (r) { if (r.error) fail("addFriendErrDupe"); else ok(); })
+              .catch(function () { fail("addFriendErrDupe"); });
+          }).catch(function () { fail("addFriendErrDupe"); });
+        }).catch(function () { fail("authErrGeneric"); });
+    }).catch(function () { fail("addFriendErrNotFound"); });
+  });
+
+  // ---------- Friend requests ----------
+  function loadFriendRequests() {
+    sb.from("friend_requests").select("id, requester_id, addressee_id, status")
+      .eq("status", "pending")
+      .or("requester_id.eq." + sbUser.id + ",addressee_id.eq." + sbUser.id)
+      .then(function (res) {
+        var rows = (res && res.data) || [];
+        var incoming = rows.filter(function (r) { return r.addressee_id === sbUser.id; });
+        var outgoing = rows.filter(function (r) { return r.requester_id === sbUser.id; });
+        var otherIds = rows.map(function (r) { return r.requester_id === sbUser.id ? r.addressee_id : r.requester_id; });
+        if (otherIds.length === 0) { sbIncoming = []; sbOutgoing = []; renderRequests(); return; }
+        sb.from("profiles").select("id, username").in("id", otherIds).then(function (res2) {
+          var byId = {};
+          (res2.data || []).forEach(function (p) { byId[p.id] = p; });
+          sbIncoming = incoming.map(function (r) { return { reqId: r.id, user: byId[r.requester_id] }; }).filter(function (x) { return x.user; });
+          sbOutgoing = outgoing.map(function (r) { return { reqId: r.id, user: byId[r.addressee_id] }; }).filter(function (x) { return x.user; });
+          renderRequests();
+        }).catch(function () {});
+      }).catch(function () {});
+  }
+
+  function renderRequests() {
+    var total = sbIncoming.length + sbOutgoing.length;
+    requestsCard.style.display = total > 0 ? "" : "none";
+    if (total === 0) { requestsList.innerHTML = ""; return; }
+    var html = "";
+    if (sbIncoming.length > 0) {
+      html += '<p class="fr-name" style="margin-bottom:6px;">' + escapeHtml(t("wIncoming")) + '</p>';
+      sbIncoming.forEach(function (req) {
+        html += '<div class="request-row">' +
+          '<div class="fr-avatar">' + escapeHtml(avatarLetter(req.user.username)) + '</div>' +
+          '<div class="fr-info"><div class="fr-name">' + escapeHtml(req.user.username) + '</div></div>' +
+          '<div class="fr-actions">' +
+            '<button type="button" class="fr-btn accept" data-req="' + req.reqId + '" data-act="accept">' + escapeHtml(t("btnAccept")) + '</button>' +
+            '<button type="button" class="fr-btn decline" data-req="' + req.reqId + '" data-act="decline">' + escapeHtml(t("btnDecline")) + '</button>' +
+          '</div></div>';
+      });
+    }
+    if (sbOutgoing.length > 0) {
+      html += '<p class="fr-name" style="margin:' + (sbIncoming.length ? '14px 0 6px' : '0 0 6px') + ';">' + escapeHtml(t("wOutgoing")) + '</p>';
+      sbOutgoing.forEach(function (req) {
+        html += '<div class="request-row">' +
+          '<div class="fr-avatar">' + escapeHtml(avatarLetter(req.user.username)) + '</div>' +
+          '<div class="fr-info"><div class="fr-name">' + escapeHtml(req.user.username) + '</div><div class="fr-streak">' + escapeHtml(t("wPending")) + '</div></div>' +
+          '<div class="fr-actions"><button type="button" class="fr-btn decline" data-req="' + req.reqId + '" data-act="cancel">' + escapeHtml(t("btnCancel")) + '</button></div>' +
+        '</div>';
+      });
+    }
+    requestsList.innerHTML = html;
+    requestsList.querySelectorAll("[data-req]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-req");
+        var act = btn.getAttribute("data-act");
+        if (act === "accept") {
+          sb.from("friend_requests").update({ status: "accepted", responded_at: new Date().toISOString() }).eq("id", id).then(function () {
+            loadFriendRequests(); loadFriends();
+          });
+        } else if (act === "decline") {
+          sb.from("friend_requests").update({ status: "declined", responded_at: new Date().toISOString() }).eq("id", id).then(function () {
+            loadFriendRequests();
+          });
+        } else if (act === "cancel") {
+          sb.from("friend_requests").delete().eq("id", id).then(function () { loadFriendRequests(); });
+        }
+      });
+    });
+  }
+
+  // ---------- Friends list ----------
+  function loadFriends() {
+    sb.from("friend_requests").select("requester_id, addressee_id")
+      .eq("status", "accepted")
+      .or("requester_id.eq." + sbUser.id + ",addressee_id.eq." + sbUser.id)
+      .then(function (res) {
+        var rows = (res && res.data) || [];
+        var ids = rows.map(function (r) { return r.requester_id === sbUser.id ? r.addressee_id : r.requester_id; });
+        if (ids.length === 0) { sbFriends = []; renderFriendsList(); return; }
+        sb.from("profiles").select("id, username, friend_code").in("id", ids).then(function (res2) {
+          var profs = res2.data || [];
+          Promise.all(profs.map(function (p) {
+            return fetchStreak(p.id).then(function (streak) {
+              return { id: p.id, username: p.username, current_streak: streak.current_streak, best_streak: streak.best_streak };
+            });
+          })).then(function (friendsWithStreak) {
+            friendsWithStreak.sort(function (a, b) { return a.username.localeCompare(b.username); });
+            sbFriends = friendsWithStreak;
+            renderFriendsList();
+          });
+        }).catch(function () {});
+      }).catch(function () {});
+  }
+
+  function renderFriendsList() {
+    if (sbFriends.length === 0) {
+      friendsListEl.innerHTML = '<div class="empty-note">' + escapeHtml(t("emptyFriends")) + '</div>';
+      return;
+    }
+    var html = "";
+    sbFriends.forEach(function (f) {
+      html += '<div class="friend-row">' +
+        '<div class="fr-avatar">' + escapeHtml(avatarLetter(f.username)) + '</div>' +
+        '<div class="fr-info"><div class="fr-name">' + escapeHtml(f.username) + '</div>' +
+        '<div class="fr-streak">' + f.current_streak + ' ' + escapeHtml(t("wDayStreak")) + '</div></div>' +
+        '<div class="fr-actions">' +
+          '<button type="button" class="fr-btn" data-friend="' + f.id + '" data-act="cal">' + escapeHtml(t("btnViewCalendar")) + '</button>' +
+          '<button type="button" class="fr-btn" data-friend="' + f.id + '" data-act="challenge">' + escapeHtml(t("btnChallenge")) + '</button>' +
+        '</div></div>';
+    });
+    friendsListEl.innerHTML = html;
+    friendsListEl.querySelectorAll("[data-friend]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-friend");
+        var friend = sbFriends.filter(function (f) { return f.id === id; })[0];
+        if (!friend) return;
+        if (btn.getAttribute("data-act") === "cal") openFriendCalendar(friend);
+        else openNewChallengeForm(friend);
+      });
+    });
+  }
+
+  // ---------- Challenges ----------
+  function metricLabel(metric) {
+    var key = { volume: "metricVolume", reps: "metricReps", sets: "metricSets", streak: "metricStreak" }[metric];
+    return t(key || "metricVolume");
+  }
+
+  function daysLeftLabel(endDateStr) {
+    var end = new Date(endDateStr + "T00:00:00");
+    var today = new Date(todayKeyFn() + "T00:00:00");
+    var diff = Math.round((end - today) / 86400000);
+    if (diff < 0) return t("wEnded");
+    return diff + " " + (diff === 1 ? t("wDayLeft") : t("wDaysLeft"));
+  }
+
+  function loadChallenges() {
+    sb.from("challenges").select("*")
+      .or("creator_id.eq." + sbUser.id + ",opponent_id.eq." + sbUser.id)
+      .neq("status", "cancelled")
+      .order("created_at", { ascending: false })
+      .then(function (res) {
+        var rows = (res && res.data) || [];
+        if (rows.length === 0) { sbChallenges = []; renderChallenges(); return; }
+        var otherIds = rows.map(function (c) { return c.creator_id === sbUser.id ? c.opponent_id : c.creator_id; });
+        sb.from("profiles").select("id, username").in("id", otherIds).then(function (res2) {
+          var byId = {};
+          (res2.data || []).forEach(function (p) { byId[p.id] = p; });
+          var active = rows.filter(function (c) { return c.status === "active"; });
+          Promise.all(active.map(function (c) {
+            return sb.rpc("get_challenge_progress", { challenge_id: c.id }).then(function (r) {
+              return (r.data && r.data[0]) || null;
+            }).catch(function () { return null; });
+          })).then(function (progresses) {
+            var progById = {};
+            active.forEach(function (c, i) { progById[c.id] = progresses[i]; });
+            sbChallenges = rows.map(function (c) {
+              var otherId = c.creator_id === sbUser.id ? c.opponent_id : c.creator_id;
+              return {
+                id: c.id, creator_id: c.creator_id, opponent_id: c.opponent_id, metric: c.metric,
+                start_date: c.start_date, end_date: c.end_date, status: c.status,
+                other: byId[otherId] || { username: "?" },
+                isCreator: c.creator_id === sbUser.id,
+                progress: progById[c.id] || null
+              };
+            });
+            renderChallenges();
+          });
+        }).catch(function () {});
+      }).catch(function () {});
+  }
+
+  function renderChallenges() {
+    if (sbChallenges.length === 0) {
+      challengesList.innerHTML = '<div class="empty-note">' + escapeHtml(t("emptyChallenges")) + '</div>';
+      return;
+    }
+    var html = "";
+    sbChallenges.forEach(function (c) {
+      html += '<div class="challenge-card">';
+      html += '<div class="challenge-head"><span class="challenge-vs">' + escapeHtml(t("wYou")) + ' ' + escapeHtml(t("wVersus")) + ' ' + escapeHtml(c.other.username) + '</span>';
+      html += '<span class="challenge-meta">' + escapeHtml(metricLabel(c.metric)) + '</span></div>';
+
+      if (c.status === "pending") {
+        html += '<div class="challenge-meta">' + escapeHtml(c.isCreator ? t("challengeStatusPending") : t("challengeStatusPendingYou")) + '</div>';
+        html += '<div class="fr-actions">';
+        if (!c.isCreator) {
+          html += '<button type="button" class="fr-btn accept" data-ch="' + c.id + '" data-act="accept">' + escapeHtml(t("btnAccept")) + '</button>';
+          html += '<button type="button" class="fr-btn decline" data-ch="' + c.id + '" data-act="decline">' + escapeHtml(t("btnDecline")) + '</button>';
+        } else {
+          html += '<button type="button" class="fr-btn decline" data-ch="' + c.id + '" data-act="cancel">' + escapeHtml(t("btnCancel")) + '</button>';
+        }
+        html += '</div>';
+      } else if (c.status === "active" && c.progress) {
+        var p = c.progress;
+        var mine = c.isCreator ? Number(p.creator_value) : Number(p.opponent_value);
+        var theirs = c.isCreator ? Number(p.opponent_value) : Number(p.creator_value);
+        var max = Math.max(mine, theirs, 1);
+        var mineLead = mine > theirs, theirsLead = theirs > mine;
+        html += '<div class="challenge-progress">';
+        html += '<div class="cp-row' + (mineLead ? ' lead' : '') + '"><span class="cp-name">' + escapeHtml(t("wYou")) + '</span><div class="cp-bar"><div class="cp-fill" style="width:' + Math.round(mine / max * 100) + '%"></div></div><span class="cp-val">' + mine + '</span></div>';
+        html += '<div class="cp-row' + (theirsLead ? ' lead' : '') + '"><span class="cp-name">' + escapeHtml(c.other.username) + '</span><div class="cp-bar"><div class="cp-fill" style="width:' + Math.round(theirs / max * 100) + '%"></div></div><span class="cp-val">' + theirs + '</span></div>';
+        html += '</div>';
+        html += '<div class="challenge-meta">' + escapeHtml(daysLeftLabel(c.end_date)) + '</div>';
+      }
+      html += '</div>';
+    });
+    challengesList.innerHTML = html;
+    challengesList.querySelectorAll("[data-ch]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-ch");
+        var act = btn.getAttribute("data-act");
+        var statusMap = { accept: "active", decline: "declined", cancel: "cancelled" };
+        sb.from("challenges").update({ status: statusMap[act], responded_at: new Date().toISOString() }).eq("id", id).then(function () {
+          loadChallenges();
+        });
+      });
+    });
+  }
+
+  // ---------- New challenge form ----------
+  function openNewChallengeForm(friend) {
+    pendingChallengeOpponent = friend;
+    ncSelectedMetric = "volume";
+    ncSelectedDuration = 7;
+    ncOpponentName.textContent = t("wYou") + " " + t("wVersus") + " " + friend.username;
+    renderMetricChips();
+    renderDurationChips();
+    ncMsg.textContent = ""; ncMsg.className = "auth-msg";
+    friendsHome.style.display = "none";
+    friendsCalendarView.style.display = "none";
+    friendsChallengeForm.style.display = "";
+  }
+  function closeNewChallengeForm() {
+    pendingChallengeOpponent = null;
+    friendsChallengeForm.style.display = "none";
+    friendsHome.style.display = "";
+  }
+  ncBackBtn.addEventListener("click", closeNewChallengeForm);
+
+  function renderMetricChips() {
+    ncMetricChips.innerHTML = "";
+    CHALLENGE_METRICS.forEach(function (m) {
+      var chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chip" + (ncSelectedMetric === m ? " active" : "");
+      chip.textContent = metricLabel(m);
+      chip.addEventListener("click", function () { ncSelectedMetric = m; renderMetricChips(); });
+      ncMetricChips.appendChild(chip);
+    });
+  }
+  function renderDurationChips() {
+    ncDurationChips.innerHTML = "";
+    var durLabelKey = { 3: "wDays3", 7: "wDays7", 14: "wDays14", 30: "wDays30" };
+    CHALLENGE_DURATIONS.forEach(function (d) {
+      var chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chip" + (ncSelectedDuration === d ? " active" : "");
+      chip.textContent = t(durLabelKey[d]);
+      chip.addEventListener("click", function () { ncSelectedDuration = d; renderDurationChips(); });
+      ncDurationChips.appendChild(chip);
+    });
+  }
+
+  ncSendBtn.addEventListener("click", function () {
+    if (!pendingChallengeOpponent) return;
+    var start = todayKeyFn();
+    var end = todayKeyFn(new Date(Date.now() + (ncSelectedDuration - 1) * 86400000));
+    ncSendBtn.disabled = true;
+    sb.from("challenges").insert({
+      creator_id: sbUser.id, opponent_id: pendingChallengeOpponent.id,
+      metric: ncSelectedMetric, start_date: start, end_date: end, status: "pending"
+    }).then(function (res) {
+      ncSendBtn.disabled = false;
+      if (res.error) { ncMsg.textContent = t("authErrGeneric"); ncMsg.className = "auth-msg err"; return; }
+      closeNewChallengeForm();
+      loadChallenges();
+    }).catch(function () {
+      ncSendBtn.disabled = false;
+      ncMsg.textContent = t("authErrGeneric"); ncMsg.className = "auth-msg err";
+    });
+  });
+
+  // ---------- Friend calendar (read-only) ----------
+  function mapRowToSet(r) {
+    return {
+      id: r.id, exercise: r.exercise, weight: Number(r.weight) || 0, unit: r.unit,
+      reps: r.reps, volume: Number(r.volume) || 0, bodyweight: !!r.bodyweight,
+      restSeconds: r.rest_seconds, loggedAt: r.logged_at, dateKey: r.date_key
+    };
+  }
+  function mapSetToRow(s) {
+    return {
+      id: s.id, user_id: sbUser.id, exercise: s.exercise, weight: s.weight || 0, unit: s.unit || "lbs",
+      reps: s.reps, volume: s.volume || 0, bodyweight: !!s.bodyweight,
+      rest_seconds: (s.restSeconds === undefined ? null : s.restSeconds),
+      logged_at: s.loggedAt, date_key: s.dateKey
+    };
+  }
+
+  function openFriendCalendar(friend) {
+    fcState.friendId = friend.id;
+    fcState.friendName = friend.username;
+    fcState.sets = [];
+    var now = new Date();
+    fcState.month = new Date(now.getFullYear(), now.getMonth(), 1);
+    fcState.selectedDateKey = todayKeyFn(now);
+    fcFriendNameEl.textContent = friend.username;
+    friendsHome.style.display = "none";
+    friendsChallengeForm.style.display = "none";
+    friendsCalendarView.style.display = "";
+    fcGrid.innerHTML = ""; fcDayDetail.innerHTML = "";
+    sb.from("workout_sets").select("*").eq("user_id", friend.id).order("logged_at", { ascending: true }).then(function (res) {
+      fcState.sets = (res.data || []).map(mapRowToSet);
+      renderFriendCalendar();
+      renderFriendDayDetail();
+    }).catch(function () { renderFriendCalendar(); renderFriendDayDetail(); });
+  }
+  fcBackBtn.addEventListener("click", function () {
+    friendsCalendarView.style.display = "none";
+    friendsHome.style.display = "";
+  });
+  fcPrev.addEventListener("click", function () {
+    fcState.month = new Date(fcState.month.getFullYear(), fcState.month.getMonth() - 1, 1);
+    renderFriendCalendar();
+  });
+  fcNext.addEventListener("click", function () {
+    fcState.month = new Date(fcState.month.getFullYear(), fcState.month.getMonth() + 1, 1);
+    renderFriendCalendar();
+  });
+
+  function renderFriendCalendar() {
+    var year = fcState.month.getFullYear(), month = fcState.month.getMonth();
+    fcTitle.textContent = fcState.month.toLocaleDateString(LOCALE_MAP[LANG] || "en-US", { month: "long", year: "numeric" });
+    fcDowRow.innerHTML = "";
+    weekdayShortNames().forEach(function (d) {
+      var el = document.createElement("div");
+      el.className = "cal-dow";
+      el.textContent = d;
+      fcDowRow.appendChild(el);
+    });
+    var datesWithData = {};
+    fcState.sets.forEach(function (s) { datesWithData[s.dateKey] = true; });
+    var firstWeekday = new Date(year, month, 1).getDay();
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    var todayStr = todayKeyFn();
+    fcGrid.innerHTML = "";
+    for (var i = 0; i < firstWeekday; i++) {
+      var blank = document.createElement("div");
+      blank.className = "cal-day empty";
+      fcGrid.appendChild(blank);
+    }
+    for (var d = 1; d <= daysInMonth; d++) {
+      var key = keyForYMD(year, month, d);
+      var cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "cal-day" +
+        (key === todayStr ? " today" : "") +
+        (datesWithData[key] ? " has-data" : "") +
+        (key === fcState.selectedDateKey ? " selected" : "");
+      cell.innerHTML = "<span>" + d + "</span>" + (datesWithData[key] ? '<span class="dot"></span>' : "");
+      (function (k) {
+        cell.addEventListener("click", function () {
+          fcState.selectedDateKey = k;
+          renderFriendCalendar();
+          renderFriendDayDetail();
+        });
+      })(key);
+      fcGrid.appendChild(cell);
+    }
+  }
+
+  function renderFriendDayDetail() {
+    var setsForDay = fcState.sets.filter(function (s) { return s.dateKey === fcState.selectedDateKey; })
+      .sort(function (a, b) { return a.loggedAt.localeCompare(b.loggedAt); });
+    var rel = relativeLabel(fcState.selectedDateKey);
+    var headHtml = '<div class="day-detail-head"><div class="date">' + formatDateKey(fcState.selectedDateKey) +
+      (rel ? '<span class="rel">' + escapeHtml(rel) + '</span>' : '') + '</div>';
+    if (setsForDay.length === 0) {
+      headHtml += '</div>';
+      fcDayDetail.innerHTML = headHtml + '<div class="day-detail-body"><div class="day-empty">' + escapeHtml(t("friendCalEmpty")) + '</div></div>';
+      return;
+    }
+    var totalSets = setsForDay.length;
+    var totalReps = setsForDay.reduce(function (a, s) { return a + s.reps; }, 0);
+    var totalVol = setsForDay.reduce(function (a, s) { return a + s.volume; }, 0);
+    headHtml += '<div class="day-totals"><span><b>' + totalSets + '</b> ' + escapeHtml(t("wSetsTotal")) + '</span><span><b>' + totalReps + '</b> ' + escapeHtml(t("wRepsTotalWord")) + '</span><span><b>' + totalVol.toLocaleString() + '</b> ' + escapeHtml(t("wVolWord")) + '</span></div></div>';
+    var byExercise = {};
+    setsForDay.forEach(function (s) { (byExercise[s.exercise] = byExercise[s.exercise] || []).push(s); });
+    var bodyHtml = '<div class="day-detail-body">';
+    Object.keys(byExercise).forEach(function (ex) {
+      var group = byExercise[ex];
+      var best = Math.max.apply(null, group.map(function (s) { return s.weight; }).concat(0));
+      var groupAllBW = group.every(function (s) { return s.bodyweight; });
+      var bestLabel = best > 0 ? (groupAllBW ? t("wBW") + "+" + best + group[0].unit : best + group[0].unit) : "";
+      bodyHtml += '<div class="ex-group"><div class="ex-name">' + escapeHtml(exerciseLabel(ex)) +
+        (bestLabel ? '<span class="best">' + escapeHtml(t("wBest")) + ' ' + escapeHtml(bestLabel) + '</span>' : '') + '</div><div class="set-list">';
+      group.forEach(function (s) {
+        var label = formatSetLabel(s);
+        bodyHtml += '<span class="set-chip' + (isPRIn(fcState.sets, s) ? " pr" : "") + '">' + escapeHtml(label) +
+          (s.restSeconds != null ? ' <span class="rest">' + fmtClock(s.restSeconds) + '</span>' : '') +
+          (isPRIn(fcState.sets, s) ? " PR" : "") + '</span>';
+      });
+      bodyHtml += '</div></div>';
+    });
+    bodyHtml += '</div>';
+    fcDayDetail.innerHTML = headHtml + bodyHtml;
+  }
+
+  // ---------- Sync local workout log to Supabase ----------
+  function syncLocalSetsToSupabase() {
+    if (!sb || !sbUser) return;
+    sb.from("workout_sets").select("*").eq("user_id", sbUser.id).then(function (res) {
+      var remoteRows = (res && res.data) || [];
+      var localRows = state.sets.map(mapSetToRow);
+      if (localRows.length > 0) {
+        sb.from("workout_sets").upsert(localRows).then(function () {}).catch(function () {});
+      }
+      var localIds = {};
+      state.sets.forEach(function (s) { localIds[s.id] = true; });
+      var missingLocally = remoteRows.filter(function (r) { return !localIds[r.id]; }).map(mapRowToSet);
+      if (missingLocally.length > 0) {
+        state.sets = state.sets.concat(missingLocally);
+        saveLocal();
+        render();
+      }
+    }).catch(function () {});
+  }
+
+  function sbPushSet(entry) {
+    if (!sb || !sbUser) return;
+    sb.from("workout_sets").upsert(mapSetToRow(entry)).then(function () {}).catch(function () {});
+  }
+  function sbDeleteSet(id) {
+    if (!sb || !sbUser) return;
+    sb.from("workout_sets").delete().eq("id", id).then(function () {}).catch(function () {});
   }
 
   // =========================================================================
@@ -1858,6 +2777,8 @@
         }, function () { writable = false; });
       }).catch(function () {});
     }
+
+    initFriends();
   }
 
   init();

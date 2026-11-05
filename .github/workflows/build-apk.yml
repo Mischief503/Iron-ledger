@@ -1,0 +1,122 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+# One build at a time per branch. A newer push waits for the running build and
+# replaces anything older still waiting, so the newest commit always ends up
+# as the "latest" release.
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # to publish the rolling "latest" release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Sync Capacitor web assets into the Android project
+        run: npx cap sync android
+
+      # Every build is signed with the same Iron Ledger key, so a new APK
+      # installs over the previous one instead of needing an uninstall.
+      # The key lives in two repository secrets, never in the repo itself:
+      #   IRONLEDGER_KEYSTORE_BASE64   - the PKCS12 keystore, base64-encoded
+      #   IRONLEDGER_KEYSTORE_PASSWORD - its password
+      # Without them (e.g. pull requests from forks) the build still runs with a
+      # throwaway debug key, but it is never published as the "latest" release.
+      - name: Load the Iron Ledger signing key
+        id: signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.IRONLEDGER_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.IRONLEDGER_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ] && [ -n "$KEYSTORE_PASSWORD" ]; then
+            printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/ironledger.p12"
+            echo "IRONLEDGER_KEYSTORE_PATH=$RUNNER_TEMP/ironledger.p12" >> "$GITHUB_ENV"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning title=Signing key missing::Add the IRONLEDGER_KEYSTORE_BASE64 and IRONLEDGER_KEYSTORE_PASSWORD repository secrets. This build uses a throwaway debug key, so it is not published as the latest release."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Retries cover flaky dependency downloads: Maven Central has returned
+      # transient 403s to runners before, which once failed this workflow.
+      - name: Build debug APK
+        working-directory: android
+        env:
+          IRONLEDGER_KEYSTORE_PASSWORD: ${{ secrets.IRONLEDGER_KEYSTORE_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          for attempt in 1 2 3; do
+            if ./gradlew assembleDebug --no-daemon; then exit 0; fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "::warning::Gradle attempt $attempt failed; retrying in 30s."
+              sleep 30
+            fi
+          done
+          exit 1
+
+      - name: Record the signing certificate
+        run: |
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          CERT="$(keytool -printcert -jarfile "$APK" 2>/dev/null | grep -E 'Owner:|SHA256:' || true)"
+          echo "$CERT"
+          {
+            echo "### Iron Ledger APK"
+            echo ""
+            echo "Signed with the Iron Ledger key: **${{ steps.signing.outputs.signed }}**"
+            echo ""
+            echo '```'
+            echo "$CERT"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: iron-ledger-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      # Publishes the APK this job just built (no second build), replacing the
+      # previous "latest" release so the download link never changes:
+      # https://github.com/<owner>/<repo>/releases/download/latest/iron-ledger-latest.apk
+      - name: Publish rolling "latest" release
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && steps.signing.outputs.signed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk iron-ledger-latest.apk
+          gh release delete latest --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
+          git push origin :refs/tags/latest 2>/dev/null || true
+          gh release create latest iron-ledger-latest.apk \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Iron Ledger (latest build)" \
+            --latest \
+            --notes "Built from commit ${GITHUB_SHA::7} on \`main\`. Download \`iron-ledger-latest.apk\` on your phone and open it to install (allow installs from your browser or Files app the first time Android asks). Every build is signed with the same Iron Ledger key, so new versions install over the old one and keep your data."

@@ -16,6 +16,21 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        // CI signs every build with the persistent Iron Ledger key so new APKs
+        // install over old ones (see .github/workflows/build-apk.yml). Without
+        // IRONLEDGER_KEYSTORE_PATH set, Android's default debug key is used.
+        debug {
+            def ironLedgerKeystore = System.getenv("IRONLEDGER_KEYSTORE_PATH")
+            if (ironLedgerKeystore) {
+                storeFile file(ironLedgerKeystore)
+                storeType "pkcs12"
+                storePassword System.getenv("IRONLEDGER_KEYSTORE_PASSWORD")
+                keyAlias "ironledger"
+                keyPassword System.getenv("IRONLEDGER_KEYSTORE_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
