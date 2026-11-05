@@ -15,6 +15,14 @@
     var savedPaletteEarly = localStorage.getItem("iron-ledger-palette-v1");
     if (savedPaletteEarly && savedPaletteEarly !== "auto") document.documentElement.setAttribute("data-palette", savedPaletteEarly);
   } catch (e) {}
+  // The launch loader (#bootLoader) only shows when there's a saved sign-in to
+  // restore, which is when the screen would otherwise flicker while the profile
+  // loads. The key is Supabase's default storage key for this project; keep it in
+  // step with SUPABASE_URL.
+  window.__ironBootStart = (window.performance && performance.now) ? performance.now() : 0;
+  try {
+    if (!localStorage.getItem("sb-bnlwclqhhyftekzjlkff-auth-token")) document.documentElement.classList.add("no-boot");
+  } catch (e) { document.documentElement.classList.add("no-boot"); }
 </script>
 <script src="vendor/supabase-js-2.45.4.js"></script>
 <style>
@@ -567,9 +575,11 @@
   }
 
   /* Launch loader: the dumbbell from the app icon gets loaded, one plate at a time,
-     alternating sides (about 4 s), then does a rep. It covers the app from the first
-     paint for about 6 s, longer only while a signed-in profile is still loading
-     (10 s at most). A tap skips it. Timings here match BOOT_* in the script. */
+     alternating sides (about 1 s), then keeps doing reps until the profile is in.
+     It only shows when a saved sign-in is being restored (html.no-boot otherwise),
+     so the screen doesn't flicker while the profile loads. At most 6 s, and a tap
+     skips it. Timings here match BOOT_* in the script. */
+  html.no-boot .boot-loader { display: none; }
   .boot-loader {
     position: fixed; inset: 0; z-index: 100;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -582,22 +592,22 @@
   .boot-db { width: min(260px, 72vw); height: auto; overflow: visible; }
   .db-bar, .db-grip, .db-collar { fill: var(--ink); }
   .db-grip { opacity: 0.85; }
-  .db-plate { fill: var(--accent); animation: 0.5s cubic-bezier(0.25, 0.8, 0.35, 1) both; }
+  .db-plate { fill: var(--accent); animation: 0.32s cubic-bezier(0.25, 0.8, 0.35, 1) both; }
   /* Each plate slides on from the end of the bar and knocks against the one before it. */
   .db-plate.p1 { animation-name: db-load1; }
   .db-plate.p2 { animation-name: db-load2; }
   .db-plate.p3 { animation-name: db-load3; }
   .db-plate.p4 { animation-name: db-load4; }
-  .db-left .p1 { animation-delay: 0.30s; }   .db-right .p1 { animation-delay: 0.75s; }
-  .db-left .p2 { animation-delay: 1.20s; }   .db-right .p2 { animation-delay: 1.65s; }
-  .db-left .p3 { animation-delay: 2.10s; }   .db-right .p3 { animation-delay: 2.55s; }
-  .db-left .p4 { animation-delay: 3.00s; }   .db-right .p4 { animation-delay: 3.45s; }
+  .db-left .p1 { animation-delay: 0.05s; }   .db-right .p1 { animation-delay: 0.15s; }
+  .db-left .p2 { animation-delay: 0.25s; }   .db-right .p2 { animation-delay: 0.35s; }
+  .db-left .p3 { animation-delay: 0.45s; }   .db-right .p3 { animation-delay: 0.55s; }
+  .db-left .p4 { animation-delay: 0.65s; }   .db-right .p4 { animation-delay: 0.75s; }
   @keyframes db-load1 { 0% { transform: translateX(-76px); opacity: 0; } 20% { opacity: 1; } 78% { transform: translateX(2px); } 100% { transform: translateX(0); opacity: 1; } }
   @keyframes db-load2 { 0% { transform: translateX(-64px); opacity: 0; } 20% { opacity: 1; } 78% { transform: translateX(2px); } 100% { transform: translateX(0); opacity: 1; } }
   @keyframes db-load3 { 0% { transform: translateX(-52px); opacity: 0; } 20% { opacity: 1; } 78% { transform: translateX(2px); } 100% { transform: translateX(0); opacity: 1; } }
   @keyframes db-load4 { 0% { transform: translateX(-40px); opacity: 0; } 20% { opacity: 1; } 78% { transform: translateX(2px); } 100% { transform: translateX(0); opacity: 1; } }
-  /* Fully loaded: a rep, repeated only if the profile is still on its way. */
-  .db-lift { animation: db-rep 1.2s ease-in-out 4.25s infinite both; }
+  /* Fully loaded: reps, only seen if the profile is still on its way. */
+  .db-lift { animation: db-rep 1s ease-in-out 1.15s infinite both; }
   @keyframes db-rep {
     0%, 100% { transform: translateY(0); }
     45%      { transform: translateY(-16px); }
@@ -610,7 +620,7 @@
   .boot-skip {
     position: absolute; left: 0; right: 0; bottom: calc(28px + env(safe-area-inset-bottom));
     margin: 0; text-align: center; font-size: 13px; color: var(--ink-dim);
-    animation: db-hint 0.6s ease 2s both;
+    animation: db-hint 0.6s ease 2.5s both;
   }
   @keyframes db-hint { from { opacity: 0; } to { opacity: 0.8; } }
   @media (prefers-reduced-motion: reduce) {
@@ -4074,18 +4084,21 @@
   }
 
   // =========================================================================
-  // Launch loader (#bootLoader): the dumbbell gets loaded while the app finds
-  // out who's signed in and, if someone is, loads their profile, friends and
-  // challenges. It stays for the whole animation (BOOT_MIN_MS), then leaves as
-  // soon as that's done. It never stays past BOOT_MAX_MS, and a tap skips it.
+  // Launch loader (#bootLoader): only when a saved sign-in is being restored
+  // (the <head> script marks html.no-boot otherwise). The dumbbell gets loaded
+  // while the session, profile, friends and challenges load, so the screen
+  // doesn't flicker through them. It leaves as soon as they're in, but not
+  // before the plates are on (BOOT_MIN_MS). Never past BOOT_MAX_MS; a tap skips.
   // =========================================================================
   var bootLoader = document.getElementById("bootLoader");
-  var BOOT_MIN_MS = 6000;   // plates on (about 4 s) plus one rep; keep in step with the CSS
-  var BOOT_MAX_MS = 10000;  // bad gym signal shouldn't keep anyone from logging
-  var BOOT_MIN_REDUCED_MS = 800;
-  var SB_SESSION_KEY = "sb-" + SUPABASE_URL.replace(/^https?:\/\//, "").split(".")[0] + "-auth-token";
+  var BOOT_MIN_MS = 1100;   // the plates take about 1 s to go on; keep in step with the CSS
+  var BOOT_MAX_MS = 6000;   // bad gym signal shouldn't keep anyone from logging
+  var BOOT_MIN_REDUCED_MS = 300;
   var bootHiding = false;
-  function bootElapsed() { return (window.performance && performance.now) ? performance.now() : 0; }
+  function bootElapsed() {
+    var now = (window.performance && performance.now) ? performance.now() : 0;
+    return now - (window.__ironBootStart || 0);
+  }
   function hideBootLoader(immediately) {
     if (bootHiding || !bootLoader) return;
     bootHiding = true;
@@ -4098,16 +4111,20 @@
   }
   function startBootLoader() {
     if (!bootLoader) return;
-    var hasSession = false;
-    try { hasSession = !!localStorage.getItem(SB_SESSION_KEY); } catch (e) {}
-    document.getElementById("bootStatus").textContent = hasSession ? t("bootLoadingProfile") : "";
+    if (document.documentElement.classList.contains("no-boot")) {
+      // Signed out: nothing to load, so no loader at all.
+      bootHiding = true;
+      bootLoader.parentNode.removeChild(bootLoader);
+      return;
+    }
+    document.getElementById("bootStatus").textContent = t("bootLoadingProfile");
     document.getElementById("bootSkip").textContent = t("bootTapToSkip");
     bootLoader.addEventListener("click", function () {
       bootHiding = false; // a tap overrides a hide that's still waiting out the animation
       hideBootLoader(true);
     });
     setTimeout(function () { bootHiding = false; hideBootLoader(true); }, Math.max(0, BOOT_MAX_MS - bootElapsed()));
-    if (!hasSession || navigator.onLine === false) hideBootLoader();
+    if (navigator.onLine === false) hideBootLoader();
   }
 
   // =========================================================================
