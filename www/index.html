@@ -420,6 +420,22 @@
   .cp-fill { height: 100%; background: var(--accent); border-radius: 999px; }
   .cp-val { font-size: 11.5px; font-family: 'IBM Plex Mono', monospace; width: 48px; text-align: right; flex-shrink: 0; }
   .cp-row.lead .cp-fill { background: var(--good); }
+  .challenge-setup { font-size: 12.5px; font-weight: 600; line-height: 1.4; }
+  .challenge-setup .setup-detail { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; color: var(--ink-dim); }
+  .fr-btn.start { align-self: flex-start; background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .fr-btn.start:hover { filter: brightness(1.06); color: var(--accent-ink); }
+  .nc-unit { margin-top: 2px; max-width: 170px; }
+  .settings-sound-row { padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .settings-sound-row .stxt { display: block; font-size: 13.5px; font-weight: 500; margin-bottom: 10px; }
+  .sound-chips { margin-bottom: 0; }
+  .sound-hint { font-size: 11px; color: var(--ink-dim); margin: 10px 0 0; }
+  .nc-hint { font-size: 11px; color: var(--ink-dim); margin: -4px 0 0; }
+  .cs-table { display: grid; grid-template-columns: 1fr auto auto; column-gap: 16px; row-gap: 5px; align-items: baseline; padding: 10px 12px; background: var(--surface-2); border-radius: 10px; }
+  .cs-h { font-size: 11px; font-weight: 600; color: var(--ink-dim); text-align: right; max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cs-l { font-size: 11.5px; color: var(--ink-dim); }
+  .cs-v { font-family: 'IBM Plex Mono', monospace; font-size: 12px; text-align: right; min-width: 52px; }
+  .cs-v.lead { color: var(--good); font-weight: 600; }
+  .challenge-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .cp-row.lead .cp-name, .cp-row.lead .cp-val { color: var(--good); font-weight: 700; }
 
   .back-link { display: inline-flex; align-items: center; gap: 6px; border: none; background: transparent; color: var(--ink-dim); font-size: 13px; font-weight: 600; cursor: pointer; padding: 0; margin-bottom: 14px; }
@@ -750,12 +766,49 @@
         <p class="eyebrow" data-i18n="eyebrowNewChallenge">NEW CHALLENGE</p>
         <p class="challenge-vs" id="ncOpponentName" style="margin-bottom:14px;"></p>
         <div class="field">
+          <label data-i18n="lblWorkout">Workout</label>
+          <div class="chips" id="ncExerciseChips"></div>
+          <div class="custom-exercise" id="ncCustomWrap">
+            <input type="text" id="ncCustomExercise" maxlength="60" autocomplete="off" data-i18n-placeholder="phExerciseName" />
+          </div>
+        </div>
+        <div class="field" style="margin-top:4px;">
+          <label data-i18n="lblFormat">Format</label>
+          <div class="chips" id="ncFormatChips"></div>
+        </div>
+        <div class="mode-config" id="ncRampConfig">
+          <p class="subhead" data-i18n="ncSetupHint">Your friend gets this exact setup. Only sets done in it count.</p>
+          <div class="mode-grid">
+            <div class="field"><label data-i18n="lblStartWt">Start wt</label><input type="number" id="ncRampStart" step="0.5" min="0" inputmode="decimal"></div>
+            <div class="field"><label data-i18n="lblIncrement">+ Increment</label><input type="number" id="ncRampIncrement" step="0.5" min="0" inputmode="decimal"></div>
+            <div class="field"><label data-i18n="lblRepsPerSet">Reps/set</label><input type="number" id="ncRampReps" step="1" min="1" inputmode="numeric"></div>
+            <div class="field"><label data-i18n="lblSetsPerWeight">Sets/weight</label><input type="number" id="ncRampSetsPer" step="1" min="1" inputmode="numeric"></div>
+            <div class="field"><label data-i18n="lblStopAt">Stop at</label><input type="number" id="ncRampTop" step="0.5" min="0" inputmode="decimal"></div>
+          </div>
+          <div class="unit-toggle nc-unit" id="ncRampUnit">
+            <button type="button" data-unit="lbs">LBS</button>
+            <button type="button" data-unit="kg">KG</button>
+          </div>
+        </div>
+        <div class="mode-config" id="ncLadderConfig">
+          <p class="subhead" data-i18n="ncSetupHint">Your friend gets this exact setup. Only sets done in it count.</p>
+          <div class="mode-grid">
+            <div class="field"><label data-i18n="lblStartReps">Start reps</label><input type="number" id="ncLadderStartReps" step="1" min="1" inputmode="numeric"></div>
+            <div class="field"><label data-i18n="lblRepStep">Rep step</label><input type="number" id="ncLadderRepStep" step="1" min="1" inputmode="numeric"></div>
+            <div class="field"><label data-i18n="lblEndReps">End reps</label><input type="number" id="ncLadderEndReps" step="1" min="1" inputmode="numeric"></div>
+            <div class="field"><label data-i18n="lblStartRest">Start rest</label><input type="number" id="ncLadderStartRest" step="1" min="0" inputmode="numeric"></div>
+            <div class="field"><label data-i18n="lblRestStep">Rest step</label><input type="number" id="ncLadderRestStep" step="1" min="0" inputmode="numeric"></div>
+            <div class="field"><label data-i18n="lblMinRest">Min rest</label><input type="number" id="ncLadderMinRest" step="1" min="0" inputmode="numeric"></div>
+          </div>
+        </div>
+        <div class="field" style="margin-top:4px;">
           <label data-i18n="lblMetric">Metric</label>
           <div class="chips" id="ncMetricChips"></div>
         </div>
         <div class="field" style="margin-top:4px;">
           <label data-i18n="lblDuration">Duration</label>
           <div class="chips" id="ncDurationChips"></div>
+          <p class="nc-hint" data-i18n="ncStartsOnAccept">The clock starts when they accept.</p>
         </div>
         <button type="button" class="log-btn-full" id="ncSendBtn" style="margin-top:14px;" data-i18n="btnSendChallenge">Send Challenge</button>
         <p class="auth-msg" id="ncMsg"></p>
@@ -782,6 +835,15 @@
       <div class="settings-toggle-row">
         <span class="stxt" data-i18n="lblSound">Sound</span>
         <label class="switch"><input type="checkbox" id="soundToggle" checked><span class="slider"></span></label>
+      </div>
+      <div class="settings-sound-row">
+        <span class="stxt" data-i18n="lblTickSound">Countdown tick</span>
+        <div class="chips sound-chips" id="tickSoundChips"></div>
+      </div>
+      <div class="settings-sound-row">
+        <span class="stxt" data-i18n="lblBuzzerSound">Time's-up buzzer</span>
+        <div class="chips sound-chips" id="buzzerSoundChips"></div>
+        <p class="sound-hint" data-i18n="soundHint">Tap a sound to hear it.</p>
       </div>
       <div class="settings-toggle-row">
         <span class="stxt" data-i18n="lblAutostart">Start timer automatically when you log a set</span>
@@ -875,7 +937,15 @@
       usernameErrTaken:"That username is taken.", btnCopy:"Copy", btnCopied:"Copied", wYou:"You",
       friendCalEmpty:"No sets logged this day.", noteFriendsLocal:"Sign in to add friends and see their workouts.",
       challengeStatusPending:"Waiting for them to accept", challengeStatusPendingYou:"Wants to challenge you",
-      wWinning:"ahead", wTied:"tied", btnSignOut:"Sign Out", lblYourCode:"YOUR CODE"
+      wWinning:"ahead", wTied:"tied", btnSignOut:"Sign Out", lblYourCode:"YOUR CODE",
+      lblWorkout:"Workout", lblFormat:"Format", exAnyExercise:"Any exercise", fmtFreeSets:"Free sets",
+      metricCompletions:"Completions", metricChallengeStreak:"Challenge streak", lblPersonalStreak:"Personal streak",
+      ncSetupHint:"Your friend gets this exact setup. Only sets done in it count.",
+      ncStartsOnAccept:"The clock starts when they accept.",
+      ncErrExercise:"Type an exercise name.", ncErrSetup:"Check the setup numbers.",
+      btnStartThisRamp:"Start this ramp", btnStartThisLadder:"Start this ladder", btnTrainThis:"Log this exercise",
+      wRest:"rest",
+      lblTickSound:"Countdown tick", lblBuzzerSound:"Time's-up buzzer", soundHint:"Tap a sound to hear it.", sndBuzz:"Buzz", sndClick:"Click", sndBeep:"Beep", sndWood:"Wood block", sndThump:"Thump", sndAlarm:"Alarm", sndChime:"Chime", sndHorn:"Horn", sndBell:"Boxing bell", sndDigital:"Digital"
     },
     es: {
       tabReps:"Reps", tabHistory:"Historial", tabSettings:"Ajustes",
@@ -903,7 +973,8 @@
       lblLanguage:"Idioma", lblTheme:"Tema", lblAuto:"Automático (según dispositivo)",
       lblSound:"Sonido", lblAutostart:"Iniciar el temporizador automáticamente al registrar",
       noteSynced:"Sincronizado — tu registro se guarda y te sigue en todos los dispositivos.", noteLocal:"Guardando solo localmente en este navegador.",
-      wRep:"rep", wReps:"reps"
+      wRep:"rep", wReps:"reps",
+      lblTickSound:"Tic de la cuenta atrás", lblBuzzerSound:"Aviso final", soundHint:"Toca un sonido para escucharlo.", sndBuzz:"Zumbido", sndClick:"Clic", sndBeep:"Pitido", sndWood:"Madera", sndThump:"Golpe", sndAlarm:"Alarma", sndChime:"Carillón", sndHorn:"Bocina", sndBell:"Campana de boxeo", sndDigital:"Digital"
     },
     fr: {
       tabReps:"Séries", tabHistory:"Historique", tabSettings:"Réglages",
@@ -931,7 +1002,8 @@
       lblLanguage:"Langue", lblTheme:"Thème", lblAuto:"Auto (selon l'appareil)",
       lblSound:"Son", lblAutostart:"Démarrer le minuteur automatiquement à l'enregistrement",
       noteSynced:"Synchronisé — ton journal est enregistré et te suit sur tous tes appareils.", noteLocal:"Enregistrement local uniquement, dans ce navigateur.",
-      wRep:"rep", wReps:"reps"
+      wRep:"rep", wReps:"reps",
+      lblTickSound:"Tic du compte à rebours", lblBuzzerSound:"Signal de fin", soundHint:"Touche un son pour l'écouter.", sndBuzz:"Bourdon", sndClick:"Clic", sndBeep:"Bip", sndWood:"Bois", sndThump:"Coup sourd", sndAlarm:"Alarme", sndChime:"Carillon", sndHorn:"Klaxon", sndBell:"Cloche de boxe", sndDigital:"Numérique"
     },
     de: {
       tabReps:"Sätze", tabHistory:"Verlauf", tabSettings:"Einstellungen",
@@ -959,7 +1031,8 @@
       lblLanguage:"Sprache", lblTheme:"Design", lblAuto:"Automatisch (Gerät folgen)",
       lblSound:"Ton", lblAutostart:"Timer beim Erfassen automatisch starten",
       noteSynced:"Synchronisiert — dein Log wird gespeichert und folgt dir auf allen Geräten.", noteLocal:"Wird nur lokal in diesem Browser gespeichert.",
-      wRep:"Wdh.", wReps:"Wdh."
+      wRep:"Wdh.", wReps:"Wdh.",
+      lblTickSound:"Countdown-Ticken", lblBuzzerSound:"Signal bei null", soundHint:"Tippe auf einen Ton, um ihn zu hören.", sndBuzz:"Summen", sndClick:"Klick", sndBeep:"Piep", sndWood:"Holzblock", sndThump:"Dumpf", sndAlarm:"Alarm", sndChime:"Glockenspiel", sndHorn:"Hupe", sndBell:"Boxglocke", sndDigital:"Digital"
     },
     pt: {
       tabReps:"Séries", tabHistory:"Histórico", tabSettings:"Config.",
@@ -987,7 +1060,8 @@
       lblLanguage:"Idioma", lblTheme:"Tema", lblAuto:"Automático (seguir dispositivo)",
       lblSound:"Som", lblAutostart:"Iniciar o temporizador automaticamente ao registrar",
       noteSynced:"Sincronizado — seu registro é salvo e te acompanha em todos os dispositivos.", noteLocal:"Salvando apenas localmente neste navegador.",
-      wRep:"rep", wReps:"reps"
+      wRep:"rep", wReps:"reps",
+      lblTickSound:"Tique da contagem", lblBuzzerSound:"Alarme final", soundHint:"Toque em um som para ouvi-lo.", sndBuzz:"Zumbido", sndClick:"Clique", sndBeep:"Bipe", sndWood:"Madeira", sndThump:"Batida", sndAlarm:"Alarme", sndChime:"Carrilhão", sndHorn:"Buzina", sndBell:"Sino de boxe", sndDigital:"Digital"
     },
     it: {
       tabReps:"Serie", tabHistory:"Cronologia", tabSettings:"Impostazioni",
@@ -1015,7 +1089,8 @@
       lblLanguage:"Lingua", lblTheme:"Tema", lblAuto:"Automatico (segui dispositivo)",
       lblSound:"Suono", lblAutostart:"Avvia il timer automaticamente alla registrazione",
       noteSynced:"Sincronizzato — il tuo registro viene salvato e ti segue su tutti i dispositivi.", noteLocal:"Salvataggio solo locale in questo browser.",
-      wRep:"rip.", wReps:"rip."
+      wRep:"rip.", wReps:"rip.",
+      lblTickSound:"Tic del conto alla rovescia", lblBuzzerSound:"Segnale finale", soundHint:"Tocca un suono per ascoltarlo.", sndBuzz:"Ronzio", sndClick:"Clic", sndBeep:"Bip", sndWood:"Legno", sndThump:"Colpo", sndAlarm:"Allarme", sndChime:"Carillon", sndHorn:"Clacson", sndBell:"Campana da boxe", sndDigital:"Digitale"
     },
     ja: {
       tabReps:"記録", tabHistory:"履歴", tabSettings:"設定",
@@ -1043,7 +1118,8 @@
       lblLanguage:"言語", lblTheme:"テーマ", lblAuto:"自動(端末に合わせる)",
       lblSound:"サウンド", lblAutostart:"記録時にタイマーを自動開始する",
       noteSynced:"同期済み — 記録は保存され、どの端末からでも確認できます。", noteLocal:"このブラウザにのみローカル保存されています。",
-      wRep:"レップ", wReps:"レップ"
+      wRep:"レップ", wReps:"レップ",
+      lblTickSound:"カウントダウン音", lblBuzzerSound:"終了ブザー", soundHint:"タップすると音を確認できます。", sndBuzz:"ブザー", sndClick:"クリック", sndBeep:"ビープ", sndWood:"ウッドブロック", sndThump:"ドン", sndAlarm:"アラーム", sndChime:"チャイム", sndHorn:"ホーン", sndBell:"ボクシングベル", sndDigital:"デジタル"
     },
     zh: {
       tabReps:"记录", tabHistory:"历史", tabSettings:"设置",
@@ -1071,7 +1147,8 @@
       lblLanguage:"语言", lblTheme:"主题", lblAuto:"自动(跟随设备)",
       lblSound:"声音", lblAutostart:"记录时自动开始计时",
       noteSynced:"已同步——你的记录已保存,可在所有设备上查看。", noteLocal:"仅保存在此浏览器本地。",
-      wRep:"次", wReps:"次"
+      wRep:"次", wReps:"次",
+      lblTickSound:"倒计时提示音", lblBuzzerSound:"结束提示音", soundHint:"点按即可试听。", sndBuzz:"嗡鸣", sndClick:"咔嗒", sndBeep:"哔声", sndWood:"木鱼", sndThump:"重击", sndAlarm:"警报", sndChime:"风铃", sndHorn:"喇叭", sndBell:"拳击铃", sndDigital:"电子音"
     }
   };
 
@@ -1133,12 +1210,12 @@
 
   var ramp = {
     active: false, exercise: null, startWeight: 45, increment: 5, repsTarget: 30,
-    setsPerWeight: 3, topWeight: 160, currentWeight: 45, setsDoneAtWeight: 0
+    setsPerWeight: 3, topWeight: 160, unit: "lbs", currentWeight: 45, setsDoneAtWeight: 0, runId: null
   };
 
   var ladder = {
     active: false, exercise: null, startReps: 15, repStep: 1, endReps: 1,
-    startRest: 30, restStep: 2, minRest: 0, currentReps: 15, currentRestSeconds: 30
+    startRest: 30, restStep: 2, minRest: 0, currentReps: 15, currentRestSeconds: 30, runId: null
   };
 
   var timer = {
@@ -1267,16 +1344,41 @@
     customWrap.classList.toggle("show", state.isCustom);
   }
 
-  unitLbsBtn.addEventListener("click", function () {
-    state.unit = "lbs";
-    unitLbsBtn.classList.add("active");
-    unitKgBtn.classList.remove("active");
-  });
-  unitKgBtn.addEventListener("click", function () {
-    state.unit = "kg";
-    unitKgBtn.classList.add("active");
-    unitLbsBtn.classList.remove("active");
-  });
+  function setUnit(unit) {
+    state.unit = unit === "kg" ? "kg" : "lbs";
+    unitLbsBtn.classList.toggle("active", state.unit === "lbs");
+    unitKgBtn.classList.toggle("active", state.unit === "kg");
+  }
+  unitLbsBtn.addEventListener("click", function () { setUnit("lbs"); });
+  unitKgBtn.addEventListener("click", function () { setUnit("kg"); });
+
+  // Selects an exercise on the Reps tab (a built-in chip, or the custom field).
+  function selectExerciseForLogging(name) {
+    if (COMMON_EXERCISES.indexOf(name) !== -1) {
+      state.isCustom = false;
+      state.selectedExercise = name;
+      bwCheck.checked = !!BODYWEIGHT_DEFAULT[name];
+    } else {
+      state.isCustom = true;
+      customInput.value = name;
+    }
+    updateWeightLabel();
+    renderChips();
+  }
+
+  // ---------- Ramp/ladder setups ----------
+  // A "setup" is the exact configuration of a ramp or ladder. Sets logged during
+  // a run are tagged with it (plus a run id), so a challenge can count only sets
+  // done in that exact setup and tell when a full run was completed.
+  function newRunId() { return "run" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function rampSetupOf(r) {
+    return { startWeight: r.startWeight, increment: r.increment, repsTarget: r.repsTarget,
+             setsPerWeight: r.setsPerWeight, topWeight: r.topWeight, unit: r.unit };
+  }
+  function ladderSetupOf(l) {
+    return { startReps: l.startReps, repStep: l.repStep, endReps: l.endReps,
+             startRest: l.startRest, restStep: l.restStep, minRest: l.minRest };
+  }
 
   // ---------- Bodyweight / added-weight ----------
   function updateWeightLabel() {
@@ -1313,20 +1415,35 @@
 
   rampToggle.addEventListener("click", function () { rampConfig.classList.toggle("show"); });
 
-  rampStartBtn.addEventListener("click", function () {
+  function startRamp(setup, exercise) {
     if (ladder.active) deactivateLadder();
-    ramp.exercise = currentExerciseName() || "Bench Press";
-    ramp.startWeight = parseFloat(rampStartInput.value) || 45;
-    ramp.increment = parseFloat(rampIncrementInput.value) || 5;
-    ramp.repsTarget = parseInt(rampRepsInput.value, 10) || 30;
-    ramp.setsPerWeight = parseInt(rampSetsPerInput.value, 10) || 3;
-    ramp.topWeight = parseFloat(rampTopInput.value) || ramp.startWeight;
+    ramp.exercise = exercise;
+    ramp.startWeight = setup.startWeight;
+    ramp.increment = setup.increment;
+    ramp.repsTarget = setup.repsTarget;
+    ramp.setsPerWeight = setup.setsPerWeight;
+    ramp.topWeight = setup.topWeight;
+    ramp.unit = setup.unit || state.unit;
     ramp.currentWeight = ramp.startWeight;
     ramp.setsDoneAtWeight = 0;
+    ramp.runId = newRunId();
     ramp.active = true;
+    rampStatus.removeAttribute("data-complete");
     applyRampPrefill();
     renderRampStatus();
     updateModeToggleVisuals();
+  }
+
+  rampStartBtn.addEventListener("click", function () {
+    var startWeight = parseFloat(rampStartInput.value) || 45;
+    startRamp({
+      startWeight: startWeight,
+      increment: parseFloat(rampIncrementInput.value) || 5,
+      repsTarget: parseInt(rampRepsInput.value, 10) || 30,
+      setsPerWeight: parseInt(rampSetsPerInput.value, 10) || 3,
+      topWeight: parseFloat(rampTopInput.value) || startWeight,
+      unit: state.unit
+    }, currentExerciseName() || "Bench Press");
   });
 
   function deactivateRamp() {
@@ -1387,21 +1504,34 @@
 
   ladderToggle.addEventListener("click", function () { ladderConfig.classList.toggle("show"); });
 
-  ladderStartBtn.addEventListener("click", function () {
+  function startLadder(setup, exercise) {
     if (ramp.active) deactivateRamp();
-    ladder.exercise = currentExerciseName() || "Push-Up";
-    ladder.startReps = parseInt(ladderStartRepsInput.value, 10) || 15;
-    ladder.repStep = parseInt(ladderRepStepInput.value, 10) || 1;
-    ladder.endReps = parseInt(ladderEndRepsInput.value, 10) || 1;
-    ladder.startRest = parseInt(ladderStartRestInput.value, 10) || 30;
-    ladder.restStep = parseInt(ladderRestStepInput.value, 10) || 0;
-    ladder.minRest = parseInt(ladderMinRestInput.value, 10) || 0;
+    ladder.exercise = exercise;
+    ladder.startReps = setup.startReps;
+    ladder.repStep = setup.repStep;
+    ladder.endReps = setup.endReps;
+    ladder.startRest = setup.startRest;
+    ladder.restStep = setup.restStep;
+    ladder.minRest = setup.minRest;
     ladder.currentReps = ladder.startReps;
     ladder.currentRestSeconds = ladder.startRest;
+    ladder.runId = newRunId();
     ladder.active = true;
+    ladderStatus.removeAttribute("data-complete");
     applyLadderPrefill();
     renderLadderStatus();
     updateModeToggleVisuals();
+  }
+
+  ladderStartBtn.addEventListener("click", function () {
+    startLadder({
+      startReps: parseInt(ladderStartRepsInput.value, 10) || 15,
+      repStep: parseInt(ladderRepStepInput.value, 10) || 1,
+      endReps: parseInt(ladderEndRepsInput.value, 10) || 1,
+      startRest: parseInt(ladderStartRestInput.value, 10) || 30,
+      restStep: parseInt(ladderRestStepInput.value, 10) || 0,
+      minRest: parseInt(ladderMinRestInput.value, 10) || 0
+    }, currentExerciseName() || "Push-Up");
   });
 
   function deactivateLadder() {
@@ -1461,8 +1591,11 @@
   // ---------- Sound: synthesized buzz + alarm (Web Audio, no assets) ----------
   var audioCtx = null;
 
+  // Previews in Settings play even when the Sound switch is off.
+  var soundPreviewing = false;
+
   function ensureAudio() {
-    if (!soundToggle.checked) return null;
+    if (!soundToggle.checked && !soundPreviewing) return null;
     if (!audioCtx) {
       var Ctx = window.AudioContext || window.webkitAudioContext;
       if (!Ctx) return null;
@@ -1472,28 +1605,92 @@
     return audioCtx;
   }
 
-  function beep(freq, durationMs, volume) {
+  // One synthesized note: freq (Hz, optionally sliding to freqEnd), waveform,
+  // length and volume, with a short attack and an exponential fade.
+  function tone(o) {
     var ctx = ensureAudio();
     if (!ctx) return;
+    var start = ctx.currentTime + (o.delay || 0) / 1000;
+    var dur = o.dur / 1000;
     var osc = ctx.createOscillator();
     var gain = ctx.createGain();
-    osc.type = "square";
-    osc.frequency.value = freq;
-    var now = ctx.currentTime;
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(volume || 0.2, now + 0.012);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + durationMs / 1000);
+    osc.type = o.type || "sine";
+    osc.frequency.setValueAtTime(o.freq, start);
+    if (o.freqEnd) osc.frequency.exponentialRampToValueAtTime(o.freqEnd, start + dur);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(o.vol || 0.2, start + (o.attack || 8) / 1000);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
     osc.connect(gain);
     gain.connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + durationMs / 1000 + 0.03);
+    osc.start(start);
+    osc.stop(start + dur + 0.05);
   }
 
-  function playBuzz() { beep(220, 110, 0.16); }
-  function playAlarm() {
-    [880, 660, 880].forEach(function (f, i) {
-      setTimeout(function () { beep(f, 170, 0.26); }, i * 190);
-    });
+  // A short filtered noise burst, for a crisp mechanical click.
+  function noiseClick(o) {
+    var ctx = ensureAudio();
+    if (!ctx) return;
+    var len = Math.max(1, Math.floor(ctx.sampleRate * o.dur / 1000));
+    var buffer = ctx.createBuffer(1, len, ctx.sampleRate);
+    var data = buffer.getChannelData(0);
+    for (var i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+    var src = ctx.createBufferSource();
+    src.buffer = buffer;
+    var filter = ctx.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.frequency.value = o.filter || 3500;
+    filter.Q.value = 1.2;
+    var gain = ctx.createGain();
+    gain.gain.value = o.vol || 0.5;
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    src.start(ctx.currentTime);
+  }
+
+  // Countdown tick (each of the last 5 seconds) and time's-up buzzer choices.
+  // The first entry of each is the original sound and stays the default.
+  var TICK_SOUNDS = [
+    { id: "buzz", key: "sndBuzz", play: function () { tone({ freq: 220, type: "square", dur: 110, vol: 0.16, attack: 12 }); } },
+    { id: "click", key: "sndClick", play: function () { noiseClick({ dur: 24, vol: 0.9, filter: 3800 }); } },
+    { id: "beep", key: "sndBeep", play: function () { tone({ freq: 1000, type: "sine", dur: 90, vol: 0.28, attack: 4 }); } },
+    { id: "wood", key: "sndWood", play: function () { tone({ freq: 950, freqEnd: 620, type: "triangle", dur: 75, vol: 0.4, attack: 2 }); } },
+    { id: "thump", key: "sndThump", play: function () { tone({ freq: 160, freqEnd: 48, type: "sine", dur: 150, vol: 0.7, attack: 3 }); } }
+  ];
+  var BUZZER_SOUNDS = [
+    { id: "alarm", key: "sndAlarm", play: function () {
+      [880, 660, 880].forEach(function (f, i) { tone({ freq: f, type: "square", dur: 170, vol: 0.26, attack: 12, delay: i * 190 }); });
+    } },
+    { id: "chime", key: "sndChime", play: function () {
+      [660, 880, 1320].forEach(function (f, i) { tone({ freq: f, type: "sine", dur: 750, vol: 0.28, attack: 5, delay: i * 150 }); });
+    } },
+    { id: "horn", key: "sndHorn", play: function () {
+      [220, 277, 330].forEach(function (f) { tone({ freq: f, type: "sawtooth", dur: 900, vol: 0.11, attack: 25 }); });
+    } },
+    { id: "bell", key: "sndBell", play: function () {
+      [0, 330, 660].forEach(function (d) {
+        tone({ freq: 1200, type: "sine", dur: 950, vol: 0.3, attack: 2, delay: d });
+        tone({ freq: 3312, type: "sine", dur: 600, vol: 0.12, attack: 2, delay: d });
+        tone({ freq: 6480, type: "sine", dur: 350, vol: 0.05, attack: 2, delay: d });
+      });
+    } },
+    { id: "digital", key: "sndDigital", play: function () {
+      [0, 120, 240, 600, 720, 840].forEach(function (d) { tone({ freq: 2100, type: "square", dur: 80, vol: 0.12, attack: 2, delay: d }); });
+    } }
+  ];
+  var soundPrefs = { tick: "buzz", buzzer: "alarm" };
+
+  function findSound(list, id) {
+    for (var i = 0; i < list.length; i++) { if (list[i].id === id) return list[i]; }
+    return list[0];
+  }
+
+  function playBuzz() { findSound(TICK_SOUNDS, soundPrefs.tick).play(); }
+  function playAlarm() { findSound(BUZZER_SOUNDS, soundPrefs.buzzer).play(); }
+
+  function previewSound(sound) {
+    soundPreviewing = true;
+    try { sound.play(); } finally { soundPreviewing = false; }
   }
 
   function restingLabel() {
@@ -1853,6 +2050,13 @@
     var rampMatched = ramp.active && ramp.exercise === exercise;
     var ladderMatched = ladder.active && ladder.exercise === exercise;
 
+    // Remember which ramp/ladder run (and exact setup) this set belongs to.
+    if (rampMatched) {
+      entry.mode = "ramp"; entry.modeConfig = rampSetupOf(ramp); entry.modeRun = ramp.runId;
+    } else if (ladderMatched) {
+      entry.mode = "ladder"; entry.modeConfig = ladderSetupOf(ladder); entry.modeRun = ladder.runId;
+    }
+
     if (ladderMatched) { state.restTarget = ladder.currentRestSeconds; }
 
     state.sets.push(entry);
@@ -1942,8 +2146,16 @@
   var pendingChallengeOpponent = null;
   var ncSelectedMetric = "volume";
   var ncSelectedDuration = 7;
-  var CHALLENGE_METRICS = ["volume", "reps", "sets", "streak"];
   var CHALLENGE_DURATIONS = [3, 7, 14, 30];
+  var CHALLENGE_FORMATS = ["free", "ramp", "ladder"];
+  // Metrics offered for each format; the first one is the default.
+  var METRICS_BY_FORMAT = {
+    free: ["volume", "reps", "sets", "streak"],
+    ramp: ["completions", "volume", "reps", "sets"],
+    ladder: ["completions", "reps", "sets"]
+  };
+  var NC_ANY = "";   // "Any exercise"
+  var nc = { exercise: NC_ANY, isCustom: false, format: "free", unit: "lbs" };
   var fcState = { friendId: null, friendName: "", sets: [], month: new Date(), selectedDateKey: todayKeyFn() };
 
   var friendsAuth = document.getElementById("friendsAuth");
@@ -1984,6 +2196,24 @@
   var ncDurationChips = document.getElementById("ncDurationChips");
   var ncSendBtn = document.getElementById("ncSendBtn");
   var ncMsg = document.getElementById("ncMsg");
+  var ncExerciseChips = document.getElementById("ncExerciseChips");
+  var ncCustomWrap = document.getElementById("ncCustomWrap");
+  var ncCustomExercise = document.getElementById("ncCustomExercise");
+  var ncFormatChips = document.getElementById("ncFormatChips");
+  var ncRampConfig = document.getElementById("ncRampConfig");
+  var ncLadderConfig = document.getElementById("ncLadderConfig");
+  var ncRampUnit = document.getElementById("ncRampUnit");
+  var ncRampStart = document.getElementById("ncRampStart");
+  var ncRampIncrement = document.getElementById("ncRampIncrement");
+  var ncRampReps = document.getElementById("ncRampReps");
+  var ncRampSetsPer = document.getElementById("ncRampSetsPer");
+  var ncRampTop = document.getElementById("ncRampTop");
+  var ncLadderStartReps = document.getElementById("ncLadderStartReps");
+  var ncLadderRepStep = document.getElementById("ncLadderRepStep");
+  var ncLadderEndReps = document.getElementById("ncLadderEndReps");
+  var ncLadderStartRest = document.getElementById("ncLadderStartRest");
+  var ncLadderRestStep = document.getElementById("ncLadderRestStep");
+  var ncLadderMinRest = document.getElementById("ncLadderMinRest");
 
   function avatarLetter(name) { return (name || "?").trim().charAt(0).toUpperCase(); }
 
@@ -2333,16 +2563,100 @@
 
   // ---------- Challenges ----------
   function metricLabel(metric) {
-    var key = { volume: "metricVolume", reps: "metricReps", sets: "metricSets", streak: "metricStreak" }[metric];
+    var key = { volume: "metricVolume", reps: "metricReps", sets: "metricSets", streak: "metricStreak", completions: "metricCompletions" }[metric];
     return t(key || "metricVolume");
   }
+  // On a card, a streak challenge's own streak is labelled as such so it isn't
+  // confused with each person's personal (all-time) streak.
+  function challengeMetricLabel(metric) {
+    return metric === "streak" ? t("metricChallengeStreak") : metricLabel(metric);
+  }
+
+  // Date keys are local "YYYY-MM-DD" strings; noon avoids daylight-saving edges.
+  function dateFromKey(key) { var p = String(key).split("-"); return new Date(+p[0], +p[1] - 1, +p[2], 12); }
+  function addDaysKey(key, n) { var d = dateFromKey(key); d.setDate(d.getDate() + n); return todayKeyFn(d); }
+  function daysBetweenKeys(a, b) { return Math.round((dateFromKey(b) - dateFromKey(a)) / 86400000); }
 
   function daysLeftLabel(endDateStr) {
-    var end = new Date(endDateStr + "T00:00:00");
-    var today = new Date(todayKeyFn() + "T00:00:00");
-    var diff = Math.round((end - today) / 86400000);
+    var diff = daysBetweenKeys(todayKeyFn(), endDateStr);
     if (diff < 0) return t("wEnded");
     return diff + " " + (diff === 1 ? t("wDayLeft") : t("wDaysLeft"));
+  }
+
+  function fmtStat(n) {
+    n = Number(n) || 0;
+    if (Math.abs(n) >= 10000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "k";
+    return String(Math.round(n * 10) / 10);
+  }
+
+  function statValue(s, metric) {
+    if (!s) return 0;
+    var v = { volume: s.volume_total, reps: s.rep_count, sets: s.set_count, streak: s.challenge_streak, completions: s.completions }[metric];
+    return Number(v) || 0;
+  }
+
+  // Human-readable workout line for a card, or null for "any exercise, free sets".
+  function describeSetup(c) {
+    if (!c.exercise && c.mode === "free") return null;
+    var title = c.exercise ? exerciseLabel(c.exercise) : t("exAnyExercise");
+    var detail = "";
+    var s = c.setup || {};
+    if (c.mode === "ramp") {
+      title += " · " + t("modeRamp");
+      detail = fmtWeight(s.startWeight) + "→" + fmtWeight(s.topWeight) + " " + (s.unit || "lbs") +
+        " (+" + fmtWeight(s.increment) + ") · " + s.setsPerWeight + "×" + s.repsTarget;
+    } else if (c.mode === "ladder") {
+      title += " · " + t("modeLadder");
+      detail = s.startReps + "→" + s.endReps + " " + t("wReps") + (s.repStep > 1 ? " (−" + s.repStep + ")" : "") +
+        " · " + t("wRest") + " " + s.startRest + "s" + (s.restStep ? " −" + s.restStep + "s" : "") +
+        (s.minRest ? " (≥" + s.minRest + "s)" : "");
+    }
+    return { title: title, detail: detail };
+  }
+
+  function startLabel(c) {
+    if (c.mode === "ramp") return t("btnStartThisRamp");
+    if (c.mode === "ladder") return t("btnStartThisLadder");
+    return t("btnTrainThis");
+  }
+
+  function findChallenge(id) {
+    for (var i = 0; i < sbChallenges.length; i++) { if (sbChallenges[i].id === id) return sbChallenges[i]; }
+    return null;
+  }
+
+  // Loads a challenge's workout on the Reps tab: selects the exercise and, for a
+  // ramp/ladder, starts that exact setup so the sets count toward the challenge.
+  function startChallengeWorkout(c) {
+    if (!c.exercise) return;
+    selectExerciseForLogging(c.exercise);
+    var s = c.setup;
+    if (c.mode === "ramp" && s) {
+      setUnit(s.unit || state.unit);
+      rampStartInput.value = s.startWeight;
+      rampIncrementInput.value = s.increment;
+      rampRepsInput.value = s.repsTarget;
+      rampSetsPerInput.value = s.setsPerWeight;
+      rampTopInput.value = s.topWeight;
+      ladderConfig.classList.remove("show");
+      rampConfig.classList.add("show");
+      startRamp(s, c.exercise);
+    } else if (c.mode === "ladder" && s) {
+      ladderStartRepsInput.value = s.startReps;
+      ladderRepStepInput.value = s.repStep;
+      ladderEndRepsInput.value = s.endReps;
+      ladderStartRestInput.value = s.startRest;
+      ladderRestStepInput.value = s.restStep;
+      ladderMinRestInput.value = s.minRest;
+      rampConfig.classList.remove("show");
+      ladderConfig.classList.add("show");
+      startLadder(s, c.exercise);
+    } else {
+      if (ramp.active && ramp.exercise !== c.exercise) deactivateRamp();
+      if (ladder.active && ladder.exercise !== c.exercise) deactivateLadder();
+    }
+    switchTab("reps");
+    try { window.scrollTo(0, 0); } catch (e) {}
   }
 
   function loadChallenges() {
@@ -2359,26 +2673,41 @@
           (res2.data || []).forEach(function (p) { byId[p.id] = p; });
           var active = rows.filter(function (c) { return c.status === "active"; });
           Promise.all(active.map(function (c) {
-            return sb.rpc("get_challenge_progress", { challenge_id: c.id }).then(function (r) {
-              return (r.data && r.data[0]) || null;
+            return sb.rpc("get_challenge_stats", { challenge_id: c.id }).then(function (r) {
+              return (r && !r.error && r.data) ? r.data : null;
             }).catch(function () { return null; });
-          })).then(function (progresses) {
-            var progById = {};
-            active.forEach(function (c, i) { progById[c.id] = progresses[i]; });
+          })).then(function (statsList) {
+            var statsById = {};
+            active.forEach(function (c, i) { statsById[c.id] = statsList[i]; });
             sbChallenges = rows.map(function (c) {
               var otherId = c.creator_id === sbUser.id ? c.opponent_id : c.creator_id;
+              var stats = null;
+              if (statsById[c.id]) {
+                var byUser = {};
+                statsById[c.id].forEach(function (s) { byUser[s.participant_id] = s; });
+                if (byUser[sbUser.id] && byUser[otherId]) stats = { mine: byUser[sbUser.id], theirs: byUser[otherId] };
+              }
               return {
                 id: c.id, creator_id: c.creator_id, opponent_id: c.opponent_id, metric: c.metric,
                 start_date: c.start_date, end_date: c.end_date, status: c.status,
+                exercise: c.exercise || null, mode: c.mode || "free", setup: c.mode_config || null,
                 other: byId[otherId] || { username: "?" },
                 isCreator: c.creator_id === sbUser.id,
-                progress: progById[c.id] || null
+                stats: stats
               };
             });
             renderChallenges();
           });
         }).catch(function () {});
       }).catch(function () {});
+  }
+
+  // One row of a card's totals table: label, your number, their number.
+  function csRow(label, a, b) {
+    var na = Number(a) || 0, nb = Number(b) || 0;
+    return '<span class="cs-l">' + escapeHtml(label) + '</span>' +
+      '<span class="cs-v' + (na > nb ? ' lead' : '') + '">' + fmtStat(na) + '</span>' +
+      '<span class="cs-v' + (nb > na ? ' lead' : '') + '">' + fmtStat(nb) + '</span>';
   }
 
   function renderChallenges() {
@@ -2388,9 +2717,16 @@
     }
     var html = "";
     sbChallenges.forEach(function (c) {
+      var you = t("wYou"), them = c.other.username;
       html += '<div class="challenge-card">';
-      html += '<div class="challenge-head"><span class="challenge-vs">' + escapeHtml(t("wYou")) + ' ' + escapeHtml(t("wVersus")) + ' ' + escapeHtml(c.other.username) + '</span>';
-      html += '<span class="challenge-meta">' + escapeHtml(metricLabel(c.metric)) + '</span></div>';
+      html += '<div class="challenge-head"><span class="challenge-vs">' + escapeHtml(you) + ' ' + escapeHtml(t("wVersus")) + ' ' + escapeHtml(them) + '</span>';
+      html += '<span class="challenge-meta">' + escapeHtml(challengeMetricLabel(c.metric)) + '</span></div>';
+
+      var setup = describeSetup(c);
+      if (setup) {
+        html += '<div class="challenge-setup">' + escapeHtml(setup.title) +
+          (setup.detail ? '<span class="setup-detail">' + escapeHtml(setup.detail) + '</span>' : '') + '</div>';
+      }
 
       if (c.status === "pending") {
         html += '<div class="challenge-meta">' + escapeHtml(c.isCreator ? t("challengeStatusPending") : t("challengeStatusPendingYou")) + '</div>';
@@ -2402,41 +2738,94 @@
           html += '<button type="button" class="fr-btn decline" data-ch="' + c.id + '" data-act="cancel">' + escapeHtml(t("btnCancel")) + '</button>';
         }
         html += '</div>';
-      } else if (c.status === "active" && c.progress) {
-        var p = c.progress;
-        var mine = c.isCreator ? Number(p.creator_value) : Number(p.opponent_value);
-        var theirs = c.isCreator ? Number(p.opponent_value) : Number(p.creator_value);
-        var max = Math.max(mine, theirs, 1);
-        var mineLead = mine > theirs, theirsLead = theirs > mine;
-        html += '<div class="challenge-progress">';
-        html += '<div class="cp-row' + (mineLead ? ' lead' : '') + '"><span class="cp-name">' + escapeHtml(t("wYou")) + '</span><div class="cp-bar"><div class="cp-fill" style="width:' + Math.round(mine / max * 100) + '%"></div></div><span class="cp-val">' + mine + '</span></div>';
-        html += '<div class="cp-row' + (theirsLead ? ' lead' : '') + '"><span class="cp-name">' + escapeHtml(c.other.username) + '</span><div class="cp-bar"><div class="cp-fill" style="width:' + Math.round(theirs / max * 100) + '%"></div></div><span class="cp-val">' + theirs + '</span></div>';
+      } else if (c.status === "active") {
+        if (c.stats) {
+          var mine = statValue(c.stats.mine, c.metric);
+          var theirs = statValue(c.stats.theirs, c.metric);
+          var max = Math.max(mine, theirs, 1);
+          html += '<div class="challenge-progress">';
+          html += '<div class="cp-row' + (mine > theirs ? ' lead' : '') + '"><span class="cp-name">' + escapeHtml(you) + '</span><div class="cp-bar"><div class="cp-fill" style="width:' + Math.round(mine / max * 100) + '%"></div></div><span class="cp-val">' + fmtStat(mine) + '</span></div>';
+          html += '<div class="cp-row' + (theirs > mine ? ' lead' : '') + '"><span class="cp-name">' + escapeHtml(them) + '</span><div class="cp-bar"><div class="cp-fill" style="width:' + Math.round(theirs / max * 100) + '%"></div></div><span class="cp-val">' + fmtStat(theirs) + '</span></div>';
+          html += '</div>';
+
+          // Totals for both people, counting only what's in this challenge.
+          var a = c.stats.mine, b = c.stats.theirs;
+          html += '<div class="cs-table">';
+          html += '<span></span><span class="cs-h">' + escapeHtml(you) + '</span><span class="cs-h">' + escapeHtml(them) + '</span>';
+          html += csRow(t("lblSets"), a.set_count, b.set_count);
+          html += csRow(t("lblReps"), a.rep_count, b.rep_count);
+          html += csRow(t("lblVolume"), a.volume_total, b.volume_total);
+          if (c.mode !== "free") html += csRow(t("metricCompletions"), a.completions, b.completions);
+          if (c.metric === "streak") html += csRow(t("lblPersonalStreak"), a.personal_streak, b.personal_streak);
+          html += '</div>';
+        }
+        var ended = daysBetweenKeys(todayKeyFn(), c.end_date) < 0;
+        html += '<div class="challenge-foot"><span class="challenge-meta">' + escapeHtml(daysLeftLabel(c.end_date)) + '</span>';
+        if (!ended && c.exercise) {
+          html += '<button type="button" class="fr-btn start" data-start="' + c.id + '">' + escapeHtml(startLabel(c)) + '</button>';
+        }
         html += '</div>';
-        html += '<div class="challenge-meta">' + escapeHtml(daysLeftLabel(c.end_date)) + '</div>';
       }
       html += '</div>';
     });
     challengesList.innerHTML = html;
+
     challengesList.querySelectorAll("[data-ch]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var id = btn.getAttribute("data-ch");
         var act = btn.getAttribute("data-act");
         var statusMap = { accept: "active", decline: "declined", cancel: "cancelled" };
-        sb.from("challenges").update({ status: statusMap[act], responded_at: new Date().toISOString() }).eq("id", id).then(function () {
+        var patch = { status: statusMap[act], responded_at: new Date().toISOString() };
+        if (act === "accept") {
+          // The clock starts when the challenge is accepted, keeping its length,
+          // so neither side loses days while it was waiting.
+          var ch = findChallenge(id);
+          if (ch) {
+            var length = Math.max(0, daysBetweenKeys(ch.start_date, ch.end_date));
+            patch.start_date = todayKeyFn();
+            patch.end_date = addDaysKey(patch.start_date, length);
+          }
+        }
+        btn.disabled = true;
+        sb.from("challenges").update(patch).eq("id", id).then(function () {
           loadChallenges();
         });
+      });
+    });
+    challengesList.querySelectorAll("[data-start]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var ch = findChallenge(btn.getAttribute("data-start"));
+        if (ch) startChallengeWorkout(ch);
       });
     });
   }
 
   // ---------- New challenge form ----------
+  function ncExerciseName() { return nc.isCustom ? ncCustomExercise.value.trim() : nc.exercise; }
+
   function openNewChallengeForm(friend) {
     pendingChallengeOpponent = friend;
-    ncSelectedMetric = "volume";
+    nc.exercise = NC_ANY;
+    nc.isCustom = false;
+    nc.format = "free";
+    nc.unit = state.unit;
+    ncCustomExercise.value = "";
+    // Ramp/ladder settings start from the ones on your Reps tab.
+    ncRampStart.value = rampStartInput.value;
+    ncRampIncrement.value = rampIncrementInput.value;
+    ncRampReps.value = rampRepsInput.value;
+    ncRampSetsPer.value = rampSetsPerInput.value;
+    ncRampTop.value = rampTopInput.value;
+    ncLadderStartReps.value = ladderStartRepsInput.value;
+    ncLadderRepStep.value = ladderRepStepInput.value;
+    ncLadderEndReps.value = ladderEndRepsInput.value;
+    ncLadderStartRest.value = ladderStartRestInput.value;
+    ncLadderRestStep.value = ladderRestStepInput.value;
+    ncLadderMinRest.value = ladderMinRestInput.value;
+    ncSelectedMetric = METRICS_BY_FORMAT.free[0];
     ncSelectedDuration = 7;
     ncOpponentName.textContent = t("wYou") + " " + t("wVersus") + " " + friend.username;
-    renderMetricChips();
-    renderDurationChips();
+    renderNewChallengeForm();
     ncMsg.textContent = ""; ncMsg.className = "auth-msg";
     friendsHome.style.display = "none";
     friendsCalendarView.style.display = "none";
@@ -2449,46 +2838,152 @@
   }
   ncBackBtn.addEventListener("click", closeNewChallengeForm);
 
+  function renderNewChallengeForm() {
+    renderNcExerciseChips();
+    renderNcFormatChips();
+    renderNcUnit();
+    renderMetricChips();
+    renderDurationChips();
+  }
+
+  function setNcFormat(format) {
+    nc.format = format;
+    // A ramp or ladder needs a specific exercise: default to the one on your Reps tab.
+    if (format !== "free" && !nc.isCustom && nc.exercise === NC_ANY) {
+      var current = currentExerciseName();
+      if (state.isCustom && current) {
+        nc.isCustom = true;
+        ncCustomExercise.value = current;
+      } else {
+        nc.exercise = (!state.isCustom && state.selectedExercise) || (format === "ramp" ? "Bench Press" : "Push-Up");
+      }
+    }
+    ncSelectedMetric = METRICS_BY_FORMAT[format][0];
+    renderNewChallengeForm();
+  }
+
+  function makeChip(label, active, onClick) {
+    var chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "chip" + (active ? " active" : "");
+    chip.textContent = label;
+    chip.addEventListener("click", onClick);
+    return chip;
+  }
+
+  function renderNcExerciseChips() {
+    ncExerciseChips.innerHTML = "";
+    [NC_ANY].concat(COMMON_EXERCISES).forEach(function (name) {
+      ncExerciseChips.appendChild(makeChip(name === NC_ANY ? t("exAnyExercise") : exerciseLabel(name),
+        !nc.isCustom && nc.exercise === name, function () {
+          nc.isCustom = false;
+          nc.exercise = name;
+          // "Any exercise" only works with free sets.
+          if (name === NC_ANY && nc.format !== "free") { setNcFormat("free"); return; }
+          renderNcExerciseChips();
+        }));
+    });
+    ncExerciseChips.appendChild(makeChip(t("exCustom"), nc.isCustom, function () {
+      nc.isCustom = true;
+      renderNcExerciseChips();
+      ncCustomExercise.focus();
+    }));
+    ncCustomWrap.classList.toggle("show", nc.isCustom);
+  }
+
+  function renderNcFormatChips() {
+    ncFormatChips.innerHTML = "";
+    var labels = { free: "fmtFreeSets", ramp: "modeRamp", ladder: "modeLadder" };
+    CHALLENGE_FORMATS.forEach(function (f) {
+      ncFormatChips.appendChild(makeChip(t(labels[f]), nc.format === f, function () { setNcFormat(f); }));
+    });
+    ncRampConfig.classList.toggle("show", nc.format === "ramp");
+    ncLadderConfig.classList.toggle("show", nc.format === "ladder");
+  }
+
+  function renderNcUnit() {
+    ncRampUnit.querySelectorAll("button").forEach(function (b) {
+      b.classList.toggle("active", b.getAttribute("data-unit") === nc.unit);
+    });
+  }
+  ncRampUnit.querySelectorAll("button").forEach(function (b) {
+    b.addEventListener("click", function () { nc.unit = b.getAttribute("data-unit"); renderNcUnit(); });
+  });
+
   function renderMetricChips() {
     ncMetricChips.innerHTML = "";
-    CHALLENGE_METRICS.forEach(function (m) {
-      var chip = document.createElement("button");
-      chip.type = "button";
-      chip.className = "chip" + (ncSelectedMetric === m ? " active" : "");
-      chip.textContent = metricLabel(m);
-      chip.addEventListener("click", function () { ncSelectedMetric = m; renderMetricChips(); });
-      ncMetricChips.appendChild(chip);
+    METRICS_BY_FORMAT[nc.format].forEach(function (m) {
+      ncMetricChips.appendChild(makeChip(metricLabel(m), ncSelectedMetric === m, function () {
+        ncSelectedMetric = m;
+        renderMetricChips();
+      }));
     });
   }
   function renderDurationChips() {
     ncDurationChips.innerHTML = "";
     var durLabelKey = { 3: "wDays3", 7: "wDays7", 14: "wDays14", 30: "wDays30" };
     CHALLENGE_DURATIONS.forEach(function (d) {
-      var chip = document.createElement("button");
-      chip.type = "button";
-      chip.className = "chip" + (ncSelectedDuration === d ? " active" : "");
-      chip.textContent = t(durLabelKey[d]);
-      chip.addEventListener("click", function () { ncSelectedDuration = d; renderDurationChips(); });
-      ncDurationChips.appendChild(chip);
+      ncDurationChips.appendChild(makeChip(t(durLabelKey[d]), ncSelectedDuration === d, function () {
+        ncSelectedDuration = d;
+        renderDurationChips();
+      }));
     });
   }
 
+  // Reads and checks the ramp/ladder setup from the form; null if it's not valid.
+  function readNcSetup() {
+    if (nc.format === "ramp") {
+      var r = {
+        startWeight: parseFloat(ncRampStart.value), increment: parseFloat(ncRampIncrement.value),
+        repsTarget: parseInt(ncRampReps.value, 10), setsPerWeight: parseInt(ncRampSetsPer.value, 10),
+        topWeight: parseFloat(ncRampTop.value), unit: nc.unit
+      };
+      var rampOk = isFinite(r.startWeight) && r.startWeight >= 0 && isFinite(r.increment) && r.increment > 0 &&
+        r.repsTarget >= 1 && r.setsPerWeight >= 1 && isFinite(r.topWeight) && r.topWeight >= r.startWeight &&
+        (Math.floor((r.topWeight - r.startWeight) / r.increment + 1e-9) + 1) * r.setsPerWeight <= 300;
+      return rampOk ? r : null;
+    }
+    if (nc.format === "ladder") {
+      var l = {
+        startReps: parseInt(ncLadderStartReps.value, 10), repStep: parseInt(ncLadderRepStep.value, 10),
+        endReps: parseInt(ncLadderEndReps.value, 10), startRest: parseInt(ncLadderStartRest.value, 10),
+        restStep: parseInt(ncLadderRestStep.value, 10), minRest: parseInt(ncLadderMinRest.value, 10)
+      };
+      var ladderOk = l.startReps >= 1 && l.repStep >= 1 && l.endReps >= 1 && l.startReps >= l.endReps &&
+        l.startRest >= 0 && l.restStep >= 0 && l.minRest >= 0 &&
+        Math.floor((l.startReps - l.endReps) / l.repStep) + 1 <= 300;
+      return ladderOk ? l : null;
+    }
+    return null;
+  }
+
+  function showNcError(key) { ncMsg.textContent = t(key); ncMsg.className = "auth-msg err"; }
+
   ncSendBtn.addEventListener("click", function () {
     if (!pendingChallengeOpponent) return;
+    var exercise = ncExerciseName();
+    if (nc.isCustom && !exercise) { showNcError("ncErrExercise"); ncCustomExercise.focus(); return; }
+    var setup = null;
+    if (nc.format !== "free") {
+      setup = readNcSetup();
+      if (!setup) { showNcError("ncErrSetup"); return; }
+    }
+    // Placeholder dates that set the length; they're moved to start on the day it's accepted.
     var start = todayKeyFn();
-    var end = todayKeyFn(new Date(Date.now() + (ncSelectedDuration - 1) * 86400000));
+    var end = addDaysKey(start, ncSelectedDuration - 1);
     ncSendBtn.disabled = true;
     sb.from("challenges").insert({
       creator_id: sbUser.id, opponent_id: pendingChallengeOpponent.id,
-      metric: ncSelectedMetric, start_date: start, end_date: end, status: "pending"
+      metric: ncSelectedMetric, start_date: start, end_date: end, status: "pending",
+      exercise: exercise || null, mode: nc.format, mode_config: setup
     }).then(function (res) {
       ncSendBtn.disabled = false;
-      if (res.error) { ncMsg.textContent = t("authErrGeneric"); ncMsg.className = "auth-msg err"; return; }
+      if (res.error) { showNcError("authErrGeneric"); return; }
       closeNewChallengeForm();
       loadChallenges();
     }).catch(function () {
       ncSendBtn.disabled = false;
-      ncMsg.textContent = t("authErrGeneric"); ncMsg.className = "auth-msg err";
+      showNcError("authErrGeneric");
     });
   });
 
@@ -2497,7 +2992,8 @@
     return {
       id: r.id, exercise: r.exercise, weight: Number(r.weight) || 0, unit: r.unit,
       reps: r.reps, volume: Number(r.volume) || 0, bodyweight: !!r.bodyweight,
-      restSeconds: r.rest_seconds, loggedAt: r.logged_at, dateKey: r.date_key
+      restSeconds: r.rest_seconds, loggedAt: r.logged_at, dateKey: r.date_key,
+      mode: r.mode || null, modeConfig: r.mode_config || null, modeRun: r.mode_run || null
     };
   }
   function mapSetToRow(s) {
@@ -2505,7 +3001,8 @@
       id: s.id, user_id: sbUser.id, exercise: s.exercise, weight: s.weight || 0, unit: s.unit || "lbs",
       reps: s.reps, volume: s.volume || 0, bodyweight: !!s.bodyweight,
       rest_seconds: (s.restSeconds === undefined ? null : s.restSeconds),
-      logged_at: s.loggedAt, date_key: s.dateKey
+      logged_at: s.loggedAt, date_key: s.dateKey,
+      mode: s.mode || null, mode_config: s.modeConfig || null, mode_run: s.modeRun || null
     };
   }
 
@@ -2663,6 +3160,7 @@
     renderChips();
     renderRampStatus();
     renderLadderStatus();
+    renderSoundChips();
     render();
     if (!db) { syncNote.textContent = t("noteLocal"); } else { syncNote.textContent = t("noteSynced"); }
   }
@@ -2740,6 +3238,10 @@
       if (savedAutostart !== null) autostartRest.checked = savedAutostart === "1";
     } catch (e) {}
     try {
+      soundPrefs.tick = findSound(TICK_SOUNDS, localStorage.getItem("iron-ledger-tick-v1")).id;
+      soundPrefs.buzzer = findSound(BUZZER_SOUNDS, localStorage.getItem("iron-ledger-buzzer-v1")).id;
+    } catch (e) {}
+    try {
       var savedTab = localStorage.getItem("iron-ledger-tab-v1");
       if (savedTab && views[savedTab]) switchTab(savedTab);
     } catch (e) {}
@@ -2751,6 +3253,31 @@
   autostartRest.addEventListener("change", function () {
     try { localStorage.setItem("iron-ledger-autostart-v1", autostartRest.checked ? "1" : "0"); } catch (e) {}
   });
+
+  // Sound pickers: tapping a sound selects it, saves it, and plays a preview.
+  var tickSoundChips = document.getElementById("tickSoundChips");
+  var buzzerSoundChips = document.getElementById("buzzerSoundChips");
+  function renderSoundChips() {
+    [[tickSoundChips, TICK_SOUNDS, "tick", "iron-ledger-tick-v1"],
+     [buzzerSoundChips, BUZZER_SOUNDS, "buzzer", "iron-ledger-buzzer-v1"]].forEach(function (row) {
+      var el = row[0], list = row[1], pref = row[2], storageKey = row[3];
+      el.innerHTML = "";
+      list.forEach(function (sound) {
+        var chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "chip" + (soundPrefs[pref] === sound.id ? " active" : "");
+        chip.setAttribute("data-sound", sound.id);
+        chip.textContent = t(sound.key);
+        chip.addEventListener("click", function () {
+          soundPrefs[pref] = sound.id;
+          try { localStorage.setItem(storageKey, sound.id); } catch (e) {}
+          renderSoundChips();
+          previewSound(sound);
+        });
+        el.appendChild(chip);
+      });
+    });
+  }
 
   // =========================================================================
   // Init
