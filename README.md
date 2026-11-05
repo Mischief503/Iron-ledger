@@ -87,12 +87,31 @@ are unaffected either way and still work fully offline.
   whenever you're signed in (in addition to the on-device local copy), so a
   friend who's connected to you can see them and your streak stays accurate.
 - **Email confirmation:** Supabase's project-level "Confirm email" setting
-  is **on by default**. That means after Sign Up, a friend has to click a
-  confirmation link in their email before they can sign in. If you want
-  frictionless sign-up for a small friend group instead, turn it off in the
-  Supabase dashboard: **Authentication → Providers → Email → uncheck
-  "Confirm email"**. (I don't have a tool to flip this remotely — it's a
-  one-click toggle for whoever owns the Supabase project.)
+  is **on**. After Sign Up, a friend taps the confirmation link in their
+  email, lands on the Iron Ledger thank-you page (see *Website* below), then
+  signs in. If they try to sign in first, the app offers **Resend
+  confirmation email**. To drop confirmation for a small friend group, turn
+  it off in the Supabase dashboard: **Authentication → Providers → Email →
+  uncheck "Confirm email"**.
+
+## Website (GitHub Pages)
+
+`docs/` is published by GitHub Pages (**Settings → Pages → Deploy from a
+branch → `main` / `/docs`**) at **https://mischief503.github.io/Iron-ledger/**.
+Pushes that only change `docs/` don't rebuild the APK.
+
+- `docs/index.html`: download page for the APK. It is also the Supabase
+  **Site URL** (Authentication → URL Configuration), so any email link
+  without a page of its own lands here and is passed on to `confirmed/`.
+- `docs/confirmed/`: where the confirm-your-email link lands (the app asks
+  for it with `emailRedirectTo`). It thanks the person and tells them to
+  open the app and sign in. On Android it has an **Open Iron Ledger** button
+  that uses the app's `com.mischief503.ironledger://` link (the intent filter
+  in `AndroidManifest.xml`). It also handles expired or already-used links,
+  and removes the sign-in tokens Supabase adds to the link from the address
+  bar. The page never uses those tokens.
+- If the site ever moves, update the Site URL in Supabase and
+  `SIGNUP_REDIRECT_URL` in `www/index.html` together.
 - There's currently no "unfriend" action — friend requests can be sent,
   accepted, declined, or cancelled, but an accepted friendship is permanent.
   Easy to add later if you want it.

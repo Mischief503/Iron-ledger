@@ -136,10 +136,11 @@
 
   .custom-exercise { display: none; margin-bottom: 14px; }
   .custom-exercise.show { display: block; }
-  .custom-exercise input {
+  .custom-exercise input, .auth-card .field input {
     width: 100%; font: inherit; font-weight: 600; padding: 11px 13px; border-radius: 10px;
     border: 1px solid var(--line); background: var(--surface-2); color: var(--ink);
   }
+  .auth-card .field input { font-weight: 500; font-size: 16px; }
 
   .entry-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
   .field label {
@@ -367,11 +368,13 @@
   .friends-auth { max-width: 420px; margin: 0 auto; }
   .auth-card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; box-shadow: var(--shadow); }
   .auth-tabs { display: flex; gap: 8px; margin-bottom: 4px; }
-  .auth-tab { flex: 1; padding: 9px 0; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface-2); color: var(--ink-dim); font-weight: 600; font-size: 13px; cursor: pointer; }
+  .auth-tab { flex: 1; padding: 9px 0; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface-2); color: var(--ink-dim); font-family: inherit; font-weight: 600; font-size: 13px; cursor: pointer; }
   .auth-tab.active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
   .auth-msg { font-size: 12.5px; margin-top: 10px; min-height: 16px; color: var(--ink-dim); }
   .auth-msg.err { color: var(--accent); }
   .auth-msg.ok { color: var(--good); }
+  .auth-link-btn { display: block; margin: 4px auto 0; padding: 6px 8px; background: none; border: none; color: var(--accent); font: 600 13px 'Archivo', sans-serif; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  .auth-link-btn:disabled { opacity: 0.5; cursor: default; }
   .auth-hint { font-size: 11.5px; color: var(--ink-dim); text-align: center; margin-top: 14px; }
 
   .fp-row { display: flex; align-items: center; gap: 12px; }
@@ -774,6 +777,7 @@
         </div>
         <button type="button" class="log-btn-full" id="authSubmitBtn" style="margin-top:14px;" data-i18n="btnSignIn">Sign In</button>
         <p class="auth-msg" id="authMsg"></p>
+        <button type="button" class="auth-link-btn" id="authResendBtn" style="display:none;" data-i18n="authResendBtn">Resend confirmation email</button>
         <p class="auth-hint" id="authHint" data-i18n="authHintSignin">New here? Tap Sign Up above.</p>
       </div>
     </div>
@@ -991,7 +995,10 @@
       btnSignIn:"Sign In", btnSignUp:"Sign Up", lblEmail:"Email", lblPassword:"Password",
       authHintSignin:"New here? Tap Sign Up above.", authHintSignup:"Already have an account? Tap Sign In above.",
       authErrFields:"Enter an email and password.", authErrGeneric:"Something went wrong. Try again.",
-      authCheckEmail:"Check your email to confirm your account, then sign in.",
+      authCheckEmail:"Almost done. Tap the confirmation link we emailed you, then come back here and sign in.",
+      authAlreadyRegistered:"That email already has an account. Enter your password and tap Sign In.",
+      authNotConfirmed:"Your email isn't confirmed yet. Tap the link in the email we sent you, or get a new one.",
+      authResendBtn:"Resend confirmation email", authResent:"Sent. Check your inbox (and spam) for the newest link.",
       eyebrowAddFriend:"ADD A FRIEND", phFriendCode:"ABC1234", btnAdd:"Add",
       addFriendOk:"Friend request sent.", addFriendErrNotFound:"No profile found with that code.",
       addFriendErrSelf:"That's your own code.", addFriendErrDupe:"You're already connected, or a request is pending.",
@@ -2689,7 +2696,12 @@
   // =========================================================================
   var SUPABASE_URL = "https://bnlwclqhhyftekzjlkff.supabase.co";
   var SUPABASE_KEY = "sb_publishable_Qn-MdbDkjtrDWBCCWwTOag_RGUzGRI0";
-  var sb = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+  // Where the "confirm your email" link lands once Supabase has confirmed the
+  // address: the thank-you page on GitHub Pages (docs/confirmed/ in this repo).
+  // Supabase only honours it because the project's Site URL is on the same site
+  // (https://mischief503.github.io/Iron-ledger/).
+  var SIGNUP_REDIRECT_URL = "https://mischief503.github.io/Iron-ledger/confirmed/";
+  var sb =(window.supabase && window.supabase.createClient) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
   var sbUser = null;
   var sbProfile = null;
@@ -2728,6 +2740,7 @@
   var authPassword = document.getElementById("authPassword");
   var authSubmitBtn = document.getElementById("authSubmitBtn");
   var authMsg = document.getElementById("authMsg");
+  var authResendBtn = document.getElementById("authResendBtn");
   var authHint = document.getElementById("authHint");
 
   var profileCard = document.getElementById("profileCard");
@@ -2797,38 +2810,70 @@
     authSubmitBtn.textContent = mode === "signin" ? t("btnSignIn") : t("btnSignUp");
     authHint.textContent = mode === "signin" ? t("authHintSignin") : t("authHintSignup");
     authPassword.setAttribute("autocomplete", mode === "signin" ? "current-password" : "new-password");
-    authMsg.textContent = "";
-    authMsg.className = "auth-msg";
+    showAuthMsg("", "");
+    authResendBtn.style.display = "none";
+  }
+  function showAuthMsg(text, kind) {
+    authMsg.textContent = text;
+    authMsg.className = "auth-msg" + (kind ? " " + kind : "");
+  }
+  function isEmailNotConfirmed(err) {
+    return !!err && (err.code === "email_not_confirmed" || /email not confirmed/i.test(err.message || ""));
   }
   authTabSignin.addEventListener("click", function () { setAuthMode("signin"); });
   authTabSignup.addEventListener("click", function () { setAuthMode("signup"); });
 
   authSubmitBtn.addEventListener("click", function () {
-    if (!sb) { authMsg.textContent = t("authErrGeneric"); authMsg.className = "auth-msg err"; return; }
+    if (!sb) { showAuthMsg(t("authErrGeneric"), "err"); return; }
     var email = authEmail.value.trim();
     var password = authPassword.value;
-    if (!email || !password) { authMsg.textContent = t("authErrFields"); authMsg.className = "auth-msg err"; return; }
+    if (!email || !password) { showAuthMsg(t("authErrFields"), "err"); return; }
     authSubmitBtn.disabled = true;
-    authMsg.textContent = ""; authMsg.className = "auth-msg";
-    var p = authMode === "signin"
+    showAuthMsg("", "");
+    authResendBtn.style.display = "none";
+    var mode = authMode;
+    var p = mode === "signin"
       ? sb.auth.signInWithPassword({ email: email, password: password })
-      : sb.auth.signUp({ email: email, password: password });
+      : sb.auth.signUp({ email: email, password: password, options: { emailRedirectTo: SIGNUP_REDIRECT_URL } });
     p.then(function (res) {
       authSubmitBtn.disabled = false;
       if (res.error) {
-        authMsg.textContent = res.error.message || t("authErrGeneric");
-        authMsg.className = "auth-msg err";
+        if (mode === "signin" && isEmailNotConfirmed(res.error)) {
+          showAuthMsg(t("authNotConfirmed"), "err");
+          authResendBtn.style.display = "";
+          return;
+        }
+        showAuthMsg(res.error.message || t("authErrGeneric"), "err");
         return;
       }
-      if (authMode === "signup" && res.data && !res.data.session) {
-        authMsg.textContent = t("authCheckEmail");
-        authMsg.className = "auth-msg ok";
+      if (mode === "signup" && res.data && !res.data.session) {
+        // Supabase answers an already-registered address with a user that has no
+        // identities (and sends no email), so say so instead of "check your email".
+        var u = res.data.user;
+        var alreadyRegistered = !!(u && Array.isArray(u.identities) && u.identities.length === 0);
+        // Switch to Sign In now, so the form is ready when they come back from the email.
+        setAuthMode("signin");
+        showAuthMsg(t(alreadyRegistered ? "authAlreadyRegistered" : "authCheckEmail"), alreadyRegistered ? "err" : "ok");
       }
     }).catch(function () {
       authSubmitBtn.disabled = false;
-      authMsg.textContent = t("authErrGeneric");
-      authMsg.className = "auth-msg err";
+      showAuthMsg(t("authErrGeneric"), "err");
     });
+  });
+  authResendBtn.addEventListener("click", function () {
+    var email = authEmail.value.trim();
+    if (!sb || !email) { showAuthMsg(t("authErrFields"), "err"); return; }
+    authResendBtn.disabled = true;
+    sb.auth.resend({ type: "signup", email: email, options: { emailRedirectTo: SIGNUP_REDIRECT_URL } })
+      .then(function (res) {
+        authResendBtn.disabled = false;
+        if (res.error) { showAuthMsg(res.error.message || t("authErrGeneric"), "err"); return; }
+        showAuthMsg(t("authResent"), "ok");
+      })
+      .catch(function () {
+        authResendBtn.disabled = false;
+        showAuthMsg(t("authErrGeneric"), "err");
+      });
   });
   [authEmail, authPassword].forEach(function (el) {
     el.addEventListener("keydown", function (e) { if (e.key === "Enter") authSubmitBtn.click(); });
