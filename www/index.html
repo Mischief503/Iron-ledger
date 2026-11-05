@@ -8,6 +8,14 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Iron Ledger</title>
+<script>
+  // Apply the saved colour theme before anything paints, so the launch loader
+  // already shows in it (loadSettings() sets the same attribute again later).
+  try {
+    var savedPaletteEarly = localStorage.getItem("iron-ledger-palette-v1");
+    if (savedPaletteEarly && savedPaletteEarly !== "auto") document.documentElement.setAttribute("data-palette", savedPaletteEarly);
+  } catch (e) {}
+</script>
 <script src="vendor/supabase-js-2.45.4.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');
@@ -557,9 +565,90 @@
     --line: rgba(231,238,245,0.12); --accent:#6FD3F0; --accent-ink:#041820; --good:#7CE0A6; --good-bg: rgba(124,224,166,0.15);
     --shadow: 0 2px 6px rgba(0,0,0,0.35), 0 16px 34px -16px rgba(0,0,0,0.55);
   }
+
+  /* Launch loader: the dumbbell from the app icon gets loaded, one plate at a time,
+     alternating sides (about 4 s), then does a rep. It covers the app from the first
+     paint for about 6 s, longer only while a signed-in profile is still loading
+     (10 s at most). A tap skips it. Timings here match BOOT_* in the script. */
+  .boot-loader {
+    position: fixed; inset: 0; z-index: 100;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: env(safe-area-inset-top) 24px env(safe-area-inset-bottom);
+    background: var(--bg); color: var(--ink);
+    transition: opacity 0.35s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .boot-loader.leaving { opacity: 0; pointer-events: none; }
+  .boot-db { width: min(260px, 72vw); height: auto; overflow: visible; }
+  .db-bar, .db-grip, .db-collar { fill: var(--ink); }
+  .db-grip { opacity: 0.85; }
+  .db-plate { fill: var(--accent); animation: 0.5s cubic-bezier(0.25, 0.8, 0.35, 1) both; }
+  /* Each plate slides on from the end of the bar and knocks against the one before it. */
+  .db-plate.p1 { animation-name: db-load1; }
+  .db-plate.p2 { animation-name: db-load2; }
+  .db-plate.p3 { animation-name: db-load3; }
+  .db-plate.p4 { animation-name: db-load4; }
+  .db-left .p1 { animation-delay: 0.30s; }   .db-right .p1 { animation-delay: 0.75s; }
+  .db-left .p2 { animation-delay: 1.20s; }   .db-right .p2 { animation-delay: 1.65s; }
+  .db-left .p3 { animation-delay: 2.10s; }   .db-right .p3 { animation-delay: 2.55s; }
+  .db-left .p4 { animation-delay: 3.00s; }   .db-right .p4 { animation-delay: 3.45s; }
+  @keyframes db-load1 { 0% { transform: translateX(-76px); opacity: 0; } 20% { opacity: 1; } 78% { transform: translateX(2px); } 100% { transform: translateX(0); opacity: 1; } }
+  @keyframes db-load2 { 0% { transform: translateX(-64px); opacity: 0; } 20% { opacity: 1; } 78% { transform: translateX(2px); } 100% { transform: translateX(0); opacity: 1; } }
+  @keyframes db-load3 { 0% { transform: translateX(-52px); opacity: 0; } 20% { opacity: 1; } 78% { transform: translateX(2px); } 100% { transform: translateX(0); opacity: 1; } }
+  @keyframes db-load4 { 0% { transform: translateX(-40px); opacity: 0; } 20% { opacity: 1; } 78% { transform: translateX(2px); } 100% { transform: translateX(0); opacity: 1; } }
+  /* Fully loaded: a rep, repeated only if the profile is still on its way. */
+  .db-lift { animation: db-rep 1.2s ease-in-out 4.25s infinite both; }
+  @keyframes db-rep {
+    0%, 100% { transform: translateY(0); }
+    45%      { transform: translateY(-16px); }
+    60%      { transform: translateY(-16px); }
+  }
+  .boot-brand { display: flex; align-items: center; gap: 9px; margin-top: 34px; }
+  .boot-brand .mark { width: 8px; height: 22px; background: var(--accent); border-radius: 2px; transform: skewX(-12deg); }
+  .boot-brand .display { font-size: 30px; letter-spacing: 0.02em; line-height: 1; }
+  .boot-status { margin: 10px 0 0; min-height: 1.4em; font-size: 14px; color: var(--ink-dim); text-align: center; }
+  .boot-skip {
+    position: absolute; left: 0; right: 0; bottom: calc(28px + env(safe-area-inset-bottom));
+    margin: 0; text-align: center; font-size: 13px; color: var(--ink-dim);
+    animation: db-hint 0.6s ease 2s both;
+  }
+  @keyframes db-hint { from { opacity: 0; } to { opacity: 0.8; } }
+  @media (prefers-reduced-motion: reduce) {
+    .boot-loader .db-plate.p1, .boot-loader .db-plate.p2, .boot-loader .db-plate.p3, .boot-loader .db-plate.p4,
+    .boot-loader .db-lift, .boot-loader .boot-skip { animation: none; }
+  }
 </style>
 </head>
 <body>
+<div class="boot-loader" id="bootLoader" role="status" aria-live="polite">
+  <svg class="boot-db" viewBox="0 0 240 100" aria-hidden="true">
+    <g class="db-lift">
+      <rect class="db-bar" x="28" y="47" width="184" height="6" rx="3"/>
+      <rect class="db-grip" x="92" y="45" width="56" height="10" rx="4"/>
+      <rect class="db-collar" x="86" y="40" width="6" height="20" rx="2"/>
+      <rect class="db-collar" x="148" y="40" width="6" height="20" rx="2"/>
+      <!-- plates, biggest first; they stack outward from the collar -->
+      <g class="db-left">
+        <rect class="db-plate p1" x="74" y="20" width="11" height="60" rx="3"/>
+        <rect class="db-plate p2" x="62" y="25" width="11" height="50" rx="3"/>
+        <rect class="db-plate p3" x="50" y="30" width="11" height="40" rx="3"/>
+        <rect class="db-plate p4" x="38" y="35" width="11" height="30" rx="3"/>
+      </g>
+      <!-- the other side: the same plates, mirrored around the middle -->
+      <g transform="translate(240 0) scale(-1 1)">
+        <g class="db-right">
+          <rect class="db-plate p1" x="74" y="20" width="11" height="60" rx="3"/>
+          <rect class="db-plate p2" x="62" y="25" width="11" height="50" rx="3"/>
+          <rect class="db-plate p3" x="50" y="30" width="11" height="40" rx="3"/>
+          <rect class="db-plate p4" x="38" y="35" width="11" height="30" rx="3"/>
+        </g>
+      </g>
+    </g>
+  </svg>
+  <div class="boot-brand" aria-hidden="true"><span class="mark"></span><span class="display">Iron Ledger</span></div>
+  <p class="boot-status" id="bootStatus"></p>
+  <p class="boot-skip" id="bootSkip"></p>
+</div>
 <div class="wrap">
 
   <header class="topbar">
@@ -989,6 +1078,7 @@
       wToday:"Today", wYesterday:"Yesterday", wSetsTotal:"sets", wRepsTotalWord:"reps", wVolWord:"vol",
       lblLanguage:"Language", lblTheme:"Theme", lblAuto:"Auto (match device)",
       lblSound:"Sound", lblAutostart:"Start timer automatically when you log a set",
+      bootLoadingProfile:"Loading your profile", bootTapToSkip:"Tap to skip",
       noteSynced:"Synced — your log is saved and follows you across devices.", noteLocal:"Saving locally in this browser only.",
       wRep:"rep", wReps:"reps",
       tabFriends:"Friends", eyebrowFriends:"FRIENDS",
@@ -1052,6 +1142,7 @@
       wToday:"Hoy", wYesterday:"Ayer", wSetsTotal:"series", wRepsTotalWord:"reps", wVolWord:"vol",
       lblLanguage:"Idioma", lblTheme:"Tema", lblAuto:"Automático (según dispositivo)",
       lblSound:"Sonido", lblAutostart:"Iniciar el temporizador automáticamente al registrar",
+      bootLoadingProfile:"Cargando tu perfil", bootTapToSkip:"Toca para saltar",
       noteSynced:"Sincronizado — tu registro se guarda y te sigue en todos los dispositivos.", noteLocal:"Guardando solo localmente en este navegador.",
       wRep:"rep", wReps:"reps",
       lblTickSound:"Tic de la cuenta atrás", lblBuzzerSound:"Aviso final", soundHint:"Toca un sonido para escucharlo.", sndBuzz:"Zumbido", sndClick:"Clic", sndBeep:"Pitido", sndWood:"Madera", sndThump:"Golpe", sndAlarm:"Alarma", sndChime:"Carillón", sndHorn:"Bocina", sndBell:"Campana de boxeo", sndDigital:"Digital",
@@ -1083,6 +1174,7 @@
       wToday:"Aujourd'hui", wYesterday:"Hier", wSetsTotal:"séries", wRepsTotalWord:"reps", wVolWord:"vol",
       lblLanguage:"Langue", lblTheme:"Thème", lblAuto:"Auto (selon l'appareil)",
       lblSound:"Son", lblAutostart:"Démarrer le minuteur automatiquement à l'enregistrement",
+      bootLoadingProfile:"Chargement de ton profil", bootTapToSkip:"Touche pour passer",
       noteSynced:"Synchronisé — ton journal est enregistré et te suit sur tous tes appareils.", noteLocal:"Enregistrement local uniquement, dans ce navigateur.",
       wRep:"rep", wReps:"reps",
       lblTickSound:"Tic du compte à rebours", lblBuzzerSound:"Signal de fin", soundHint:"Touche un son pour l'écouter.", sndBuzz:"Bourdon", sndClick:"Clic", sndBeep:"Bip", sndWood:"Bois", sndThump:"Coup sourd", sndAlarm:"Alarme", sndChime:"Carillon", sndHorn:"Klaxon", sndBell:"Cloche de boxe", sndDigital:"Numérique",
@@ -1114,6 +1206,7 @@
       wToday:"Heute", wYesterday:"Gestern", wSetsTotal:"Sätze", wRepsTotalWord:"Wdh.", wVolWord:"Vol.",
       lblLanguage:"Sprache", lblTheme:"Design", lblAuto:"Automatisch (Gerät folgen)",
       lblSound:"Ton", lblAutostart:"Timer beim Erfassen automatisch starten",
+      bootLoadingProfile:"Dein Profil wird geladen", bootTapToSkip:"Zum Überspringen tippen",
       noteSynced:"Synchronisiert — dein Log wird gespeichert und folgt dir auf allen Geräten.", noteLocal:"Wird nur lokal in diesem Browser gespeichert.",
       wRep:"Wdh.", wReps:"Wdh.",
       lblTickSound:"Countdown-Ticken", lblBuzzerSound:"Signal bei null", soundHint:"Tippe auf einen Ton, um ihn zu hören.", sndBuzz:"Summen", sndClick:"Klick", sndBeep:"Piep", sndWood:"Holzblock", sndThump:"Dumpf", sndAlarm:"Alarm", sndChime:"Glockenspiel", sndHorn:"Hupe", sndBell:"Boxglocke", sndDigital:"Digital",
@@ -1145,6 +1238,7 @@
       wToday:"Hoje", wYesterday:"Ontem", wSetsTotal:"séries", wRepsTotalWord:"reps", wVolWord:"vol",
       lblLanguage:"Idioma", lblTheme:"Tema", lblAuto:"Automático (seguir dispositivo)",
       lblSound:"Som", lblAutostart:"Iniciar o temporizador automaticamente ao registrar",
+      bootLoadingProfile:"Carregando seu perfil", bootTapToSkip:"Toque para pular",
       noteSynced:"Sincronizado — seu registro é salvo e te acompanha em todos os dispositivos.", noteLocal:"Salvando apenas localmente neste navegador.",
       wRep:"rep", wReps:"reps",
       lblTickSound:"Tique da contagem", lblBuzzerSound:"Alarme final", soundHint:"Toque em um som para ouvi-lo.", sndBuzz:"Zumbido", sndClick:"Clique", sndBeep:"Bipe", sndWood:"Madeira", sndThump:"Batida", sndAlarm:"Alarme", sndChime:"Carrilhão", sndHorn:"Buzina", sndBell:"Sino de boxe", sndDigital:"Digital",
@@ -1176,6 +1270,7 @@
       wToday:"Oggi", wYesterday:"Ieri", wSetsTotal:"serie", wRepsTotalWord:"rip.", wVolWord:"vol",
       lblLanguage:"Lingua", lblTheme:"Tema", lblAuto:"Automatico (segui dispositivo)",
       lblSound:"Suono", lblAutostart:"Avvia il timer automaticamente alla registrazione",
+      bootLoadingProfile:"Caricamento del tuo profilo", bootTapToSkip:"Tocca per saltare",
       noteSynced:"Sincronizzato — il tuo registro viene salvato e ti segue su tutti i dispositivi.", noteLocal:"Salvataggio solo locale in questo browser.",
       wRep:"rip.", wReps:"rip.",
       lblTickSound:"Tic del conto alla rovescia", lblBuzzerSound:"Segnale finale", soundHint:"Tocca un suono per ascoltarlo.", sndBuzz:"Ronzio", sndClick:"Clic", sndBeep:"Bip", sndWood:"Legno", sndThump:"Colpo", sndAlarm:"Allarme", sndChime:"Carillon", sndHorn:"Clacson", sndBell:"Campana da boxe", sndDigital:"Digitale",
@@ -1207,6 +1302,7 @@
       wToday:"今日", wYesterday:"昨日", wSetsTotal:"セット", wRepsTotalWord:"レップ", wVolWord:"総量",
       lblLanguage:"言語", lblTheme:"テーマ", lblAuto:"自動(端末に合わせる)",
       lblSound:"サウンド", lblAutostart:"記録時にタイマーを自動開始する",
+      bootLoadingProfile:"プロフィールを読み込み中", bootTapToSkip:"タップでスキップ",
       noteSynced:"同期済み — 記録は保存され、どの端末からでも確認できます。", noteLocal:"このブラウザにのみローカル保存されています。",
       wRep:"レップ", wReps:"レップ",
       lblTickSound:"カウントダウン音", lblBuzzerSound:"終了ブザー", soundHint:"タップすると音を確認できます。", sndBuzz:"ブザー", sndClick:"クリック", sndBeep:"ビープ", sndWood:"ウッドブロック", sndThump:"ドン", sndAlarm:"アラーム", sndChime:"チャイム", sndHorn:"ホーン", sndBell:"ボクシングベル", sndDigital:"デジタル",
@@ -1238,6 +1334,7 @@
       wToday:"今天", wYesterday:"昨天", wSetsTotal:"组", wRepsTotalWord:"次", wVolWord:"总量",
       lblLanguage:"语言", lblTheme:"主题", lblAuto:"自动(跟随设备)",
       lblSound:"声音", lblAutostart:"记录时自动开始计时",
+      bootLoadingProfile:"正在加载你的资料", bootTapToSkip:"轻触跳过",
       noteSynced:"已同步——你的记录已保存,可在所有设备上查看。", noteLocal:"仅保存在此浏览器本地。",
       wRep:"次", wReps:"次",
       lblTickSound:"倒计时提示音", lblBuzzerSound:"结束提示音", soundHint:"点按即可试听。", sndBuzz:"嗡鸣", sndClick:"咔嗒", sndBeep:"哔声", sndWood:"木鱼", sndThump:"重击", sndAlarm:"警报", sndChime:"风铃", sndHorn:"喇叭", sndBell:"拳击铃", sndDigital:"电子音",
@@ -2880,22 +2977,28 @@
   });
 
   function initFriends() {
-    if (!sb) { friendsSyncNote.textContent = t("authErrGeneric"); return; }
+    if (!sb) { friendsSyncNote.textContent = t("authErrGeneric"); hideBootLoader(); return; }
     sb.auth.onAuthStateChange(function (event, session) {
       sbUser = session ? session.user : null;
-      if (sbUser) { showFriendsHome(); loadFriendsData(); }
-      else { sbProfile = null; showFriendsAuth(); }
+      if (sbUser) {
+        showFriendsHome();
+        loadFriendsData().then(hideBootLoader, hideBootLoader);
+      } else {
+        sbProfile = null;
+        showFriendsAuth();
+        hideBootLoader();
+      }
     });
   }
 
+  // Resolves once the profile, friend requests, friends and challenges have loaded
+  // (or failed); the launch loader waits for this.
   function loadFriendsData() {
-    loadOrCreateProfile().then(function () {
+    return loadOrCreateProfile().then(function () {
       renderProfileCard();
       syncLocalSetsToSupabase();
       syncLocalRunsToSupabase();
-      loadFriendRequests();
-      loadFriends();
-      loadChallenges();
+      return Promise.all([loadFriendRequests(), loadFriends(), loadChallenges()]);
     });
   }
 
@@ -3047,7 +3150,7 @@
 
   // ---------- Friend requests ----------
   function loadFriendRequests() {
-    sb.from("friend_requests").select("id, requester_id, addressee_id, status")
+    return sb.from("friend_requests").select("id, requester_id, addressee_id, status")
       .eq("status", "pending")
       .or("requester_id.eq." + sbUser.id + ",addressee_id.eq." + sbUser.id)
       .then(function (res) {
@@ -3056,7 +3159,7 @@
         var outgoing = rows.filter(function (r) { return r.requester_id === sbUser.id; });
         var otherIds = rows.map(function (r) { return r.requester_id === sbUser.id ? r.addressee_id : r.requester_id; });
         if (otherIds.length === 0) { sbIncoming = []; sbOutgoing = []; renderRequests(); return; }
-        sb.from("profiles").select("id, username").in("id", otherIds).then(function (res2) {
+        return sb.from("profiles").select("id, username").in("id", otherIds).then(function (res2) {
           var byId = {};
           (res2.data || []).forEach(function (p) { byId[p.id] = p; });
           sbIncoming = incoming.map(function (r) { return { reqId: r.id, user: byId[r.requester_id] }; }).filter(function (x) { return x.user; });
@@ -3115,16 +3218,16 @@
 
   // ---------- Friends list ----------
   function loadFriends() {
-    sb.from("friend_requests").select("requester_id, addressee_id")
+    return sb.from("friend_requests").select("requester_id, addressee_id")
       .eq("status", "accepted")
       .or("requester_id.eq." + sbUser.id + ",addressee_id.eq." + sbUser.id)
       .then(function (res) {
         var rows = (res && res.data) || [];
         var ids = rows.map(function (r) { return r.requester_id === sbUser.id ? r.addressee_id : r.requester_id; });
         if (ids.length === 0) { sbFriends = []; renderFriendsList(); return; }
-        sb.from("profiles").select("id, username, friend_code").in("id", ids).then(function (res2) {
+        return sb.from("profiles").select("id, username, friend_code").in("id", ids).then(function (res2) {
           var profs = res2.data || [];
-          Promise.all(profs.map(function (p) {
+          return Promise.all(profs.map(function (p) {
             return fetchStreak(p.id).then(function (streak) {
               return { id: p.id, username: p.username, current_streak: streak.current_streak, best_streak: streak.best_streak };
             });
@@ -3281,7 +3384,7 @@
   }
 
   function loadChallenges() {
-    sb.from("challenges").select("*")
+    return sb.from("challenges").select("*")
       .or("creator_id.eq." + sbUser.id + ",opponent_id.eq." + sbUser.id)
       .neq("status", "cancelled")
       .order("created_at", { ascending: false })
@@ -3289,11 +3392,11 @@
         var rows = (res && res.data) || [];
         if (rows.length === 0) { sbChallenges = []; renderChallenges(); return; }
         var otherIds = rows.map(function (c) { return c.creator_id === sbUser.id ? c.opponent_id : c.creator_id; });
-        sb.from("profiles").select("id, username").in("id", otherIds).then(function (res2) {
+        return sb.from("profiles").select("id, username").in("id", otherIds).then(function (res2) {
           var byId = {};
           (res2.data || []).forEach(function (p) { byId[p.id] = p; });
           var active = rows.filter(function (c) { return c.status === "active"; });
-          Promise.all(active.map(function (c) {
+          return Promise.all(active.map(function (c) {
             return sb.rpc("get_challenge_stats", { challenge_id: c.id }).then(function (r) {
               return (r && !r.error && r.data) ? r.data : null;
             }).catch(function () { return null; });
@@ -3971,6 +4074,43 @@
   }
 
   // =========================================================================
+  // Launch loader (#bootLoader): the dumbbell gets loaded while the app finds
+  // out who's signed in and, if someone is, loads their profile, friends and
+  // challenges. It stays for the whole animation (BOOT_MIN_MS), then leaves as
+  // soon as that's done. It never stays past BOOT_MAX_MS, and a tap skips it.
+  // =========================================================================
+  var bootLoader = document.getElementById("bootLoader");
+  var BOOT_MIN_MS = 6000;   // plates on (about 4 s) plus one rep; keep in step with the CSS
+  var BOOT_MAX_MS = 10000;  // bad gym signal shouldn't keep anyone from logging
+  var BOOT_MIN_REDUCED_MS = 800;
+  var SB_SESSION_KEY = "sb-" + SUPABASE_URL.replace(/^https?:\/\//, "").split(".")[0] + "-auth-token";
+  var bootHiding = false;
+  function bootElapsed() { return (window.performance && performance.now) ? performance.now() : 0; }
+  function hideBootLoader(immediately) {
+    if (bootHiding || !bootLoader) return;
+    bootHiding = true;
+    var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var wait = immediately === true ? 0 : Math.max(0, (reduced ? BOOT_MIN_REDUCED_MS : BOOT_MIN_MS) - bootElapsed());
+    setTimeout(function () {
+      bootLoader.classList.add("leaving");
+      setTimeout(function () { if (bootLoader.parentNode) bootLoader.parentNode.removeChild(bootLoader); }, 400);
+    }, wait);
+  }
+  function startBootLoader() {
+    if (!bootLoader) return;
+    var hasSession = false;
+    try { hasSession = !!localStorage.getItem(SB_SESSION_KEY); } catch (e) {}
+    document.getElementById("bootStatus").textContent = hasSession ? t("bootLoadingProfile") : "";
+    document.getElementById("bootSkip").textContent = t("bootTapToSkip");
+    bootLoader.addEventListener("click", function () {
+      bootHiding = false; // a tap overrides a hide that's still waiting out the animation
+      hideBootLoader(true);
+    });
+    setTimeout(function () { bootHiding = false; hideBootLoader(true); }, Math.max(0, BOOT_MAX_MS - bootElapsed()));
+    if (!hasSession || navigator.onLine === false) hideBootLoader();
+  }
+
+  // =========================================================================
   // Init
   // =========================================================================
   function init() {
@@ -3978,6 +4118,7 @@
     loadRunPrefs();
     state.runs = loadRuns();
     applyTranslations();
+    startBootLoader();
     renderLangGrid();
     renderThemeGrid();
     state.sets = loadLocal();
