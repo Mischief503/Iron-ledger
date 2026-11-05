@@ -4,4 +4,8 @@
     <string name="title_activity_main">Iron Ledger</string>
     <string name="package_name">com.mischief503.ironledger</string>
     <string name="custom_url_scheme">com.mischief503.ironledger</string>
+    <!-- GPS run tracking (@capacitor-community/background-geolocation) -->
+    <string name="capacitor_background_geolocation_notification_channel_name">Run tracking</string>
+    <string name="capacitor_background_geolocation_notification_icon">drawable/ic_tracking</string>
+    <string name="capacitor_background_geolocation_notification_color">#C9441E</string>
 </resources>

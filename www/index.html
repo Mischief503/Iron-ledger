@@ -418,13 +418,36 @@
   .cp-name { font-size: 11.5px; width: 76px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .cp-bar { flex: 1; height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
   .cp-fill { height: 100%; background: var(--accent); border-radius: 999px; }
-  .cp-val { font-size: 11.5px; font-family: 'IBM Plex Mono', monospace; width: 48px; text-align: right; flex-shrink: 0; }
+  .cp-val { font-size: 11.5px; font-family: 'IBM Plex Mono', monospace; min-width: 48px; text-align: right; flex-shrink: 0; white-space: nowrap; }
   .cp-row.lead .cp-fill { background: var(--good); }
   .challenge-setup { font-size: 12.5px; font-weight: 600; line-height: 1.4; }
   .challenge-setup .setup-detail { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; color: var(--ink-dim); }
   .fr-btn.start { align-self: flex-start; background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
   .fr-btn.start:hover { filter: brightness(1.06); color: var(--accent-ink); }
   .nc-unit { margin-top: 2px; max-width: 170px; }
+  .seg-toggle { display: flex; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 4px; margin-bottom: 14px; }
+  .seg-toggle button { flex: 1; border: none; background: transparent; color: var(--ink-dim); font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 0.05em; text-transform: uppercase; padding: 9px 0; border-radius: 9px; cursor: pointer; }
+  .seg-toggle button.active { background: var(--surface); color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+  .run-display { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 14px 6px 12px; margin: 2px 0 4px; }
+  .rd-stat { text-align: center; min-width: 0; }
+  .rd-num { font-family: 'Bebas Neue', sans-serif; font-size: 36px; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .run-display.live .rd-num { color: var(--accent); }
+  .rd-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-dim); margin-top: 5px; }
+  .run-gps-row { border-bottom: none; padding: 12px 0 2px; }
+  .run-sub { display: block; font-size: 11.5px; font-weight: 400; color: var(--ink-dim); margin-top: 3px; line-height: 1.35; }
+  .run-sub.good { color: var(--good); }
+  .run-sub.bad { color: var(--accent); }
+  .run-controls { display: flex; gap: 10px; margin-top: 12px; }
+  .run-controls .run-ctl { flex: 1; height: 50px; font-size: 15px; border-radius: 12px; }
+  .run-entry { margin-top: 16px; }
+  .run-entry input[type="text"] {
+    width: 100%; font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 500;
+    padding: 11px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2);
+    color: var(--ink); font-variant-numeric: tabular-nums;
+  }
+  .run-entry input:disabled { opacity: 0.55; }
+  .log-btn-full.secondary { background: var(--ink); color: var(--surface); }
+  .set-pill .gps, .set-chip .gps { font-size: 9px; font-weight: 700; letter-spacing: 0.05em; color: var(--ink-dim); border: 1px solid var(--line); border-radius: 4px; padding: 1px 4px; }
   .settings-sound-row { padding: 14px 0; border-bottom: 1px solid var(--line); }
   .settings-sound-row .stxt { display: block; font-size: 13.5px; font-weight: 500; margin-bottom: 10px; }
   .sound-chips { margin-bottom: 0; }
@@ -550,7 +573,11 @@
 
   <!-- ================= REPS TAB ================= -->
   <section class="view active" id="view-reps">
-    <div class="panel">
+    <div class="seg-toggle" id="logModeSeg">
+      <button type="button" data-logmode="lift" class="active" data-i18n="segLift">Lift</button>
+      <button type="button" data-logmode="run" data-i18n="segRun">Run</button>
+    </div>
+    <div class="panel" id="liftPanel">
       <div class="panel-head">
         <p class="eyebrow" data-i18n="eyebrowLog">LOG A SET</p>
         <div class="mode-toggles">
@@ -654,6 +681,50 @@
       </div>
 
       <div class="session-strip empty" id="sessionStrip"></div>
+    </div>
+
+    <!-- Runs / jogs / walks: manual entry or timer, with optional GPS distance -->
+    <div class="panel" id="runPanel" style="display:none;">
+      <p class="eyebrow" data-i18n="eyebrowLogRun">LOG A RUN</p>
+      <div class="chips" id="runKindChips"></div>
+
+      <div class="run-display" id="runDisplay">
+        <div class="rd-stat"><div class="rd-num" id="runTimeOut">0:00</div><div class="rd-lbl" data-i18n="lblTime">Time</div></div>
+        <div class="rd-stat"><div class="rd-num" id="runDistOut">0.00</div><div class="rd-lbl" id="runDistUnitLbl">mi</div></div>
+        <div class="rd-stat"><div class="rd-num" id="runPaceOut">–</div><div class="rd-lbl" id="runPaceUnitLbl">/mi</div></div>
+      </div>
+
+      <div class="settings-toggle-row run-gps-row">
+        <span class="stxt"><span data-i18n="lblUseGps">Use GPS for distance</span><span class="run-sub" id="gpsStatus"></span></span>
+        <label class="switch"><input type="checkbox" id="runGpsToggle"><span class="slider"></span></label>
+      </div>
+
+      <button type="button" class="log-btn-full" id="runStartBtn" data-i18n="btnStartRun">Start Run</button>
+      <div class="run-controls">
+        <button type="button" class="mode-btn run-ctl" id="runPauseBtn">Pause</button>
+        <button type="button" class="mode-btn primary run-ctl" id="runFinishBtn" data-i18n="btnFinish">Finish</button>
+      </div>
+
+      <div class="entry-row run-entry">
+        <div class="field">
+          <label for="runDistInput" data-i18n="lblDistance">Distance</label>
+          <input type="number" id="runDistInput" inputmode="decimal" min="0" step="0.01" placeholder="0.00" />
+        </div>
+        <div class="field">
+          <label data-i18n="lblUnit">Unit</label>
+          <div class="unit-toggle">
+            <button type="button" id="runUnitMi" class="active">MI</button>
+            <button type="button" id="runUnitKm">KM</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="runTimeInput" data-i18n="lblTime">Time</label>
+          <input type="text" id="runTimeInput" inputmode="numeric" placeholder="mm:ss" autocomplete="off" />
+        </div>
+      </div>
+      <button type="button" class="log-btn-full secondary" id="runLogBtn" data-i18n="btnLogRun">Log Run</button>
+      <p class="auth-msg" id="runMsg"></p>
+      <div class="session-strip empty" id="runStrip"></div>
     </div>
   </section>
 
@@ -945,7 +1016,9 @@
       ncErrExercise:"Type an exercise name.", ncErrSetup:"Check the setup numbers.",
       btnStartThisRamp:"Start this ramp", btnStartThisLadder:"Start this ladder", btnTrainThis:"Log this exercise",
       wRest:"rest",
-      lblTickSound:"Countdown tick", lblBuzzerSound:"Time's-up buzzer", soundHint:"Tap a sound to hear it.", sndBuzz:"Buzz", sndClick:"Click", sndBeep:"Beep", sndWood:"Wood block", sndThump:"Thump", sndAlarm:"Alarm", sndChime:"Chime", sndHorn:"Horn", sndBell:"Boxing bell", sndDigital:"Digital"
+      lblTickSound:"Countdown tick", lblBuzzerSound:"Time's-up buzzer", soundHint:"Tap a sound to hear it.", sndBuzz:"Buzz", sndClick:"Click", sndBeep:"Beep", sndWood:"Wood block", sndThump:"Thump", sndAlarm:"Alarm", sndChime:"Chime", sndHorn:"Horn", sndBell:"Boxing bell", sndDigital:"Digital",
+      segLift:"Lift", segRun:"Run", eyebrowLogRun:"LOG A RUN", kindRun:"Run", kindJog:"Jog", kindWalk:"Walk", lblTime:"Time", lblDistance:"Distance", lblUseGps:"Use GPS for distance", btnStartRun:"Start Run", btnPause:"Pause", btnResume:"Resume", btnFinish:"Finish", btnLogRun:"Log Run", runMsgCheck:"Check the numbers, then tap Log Run.", runMsgLogged:"Run logged.", runErrDistance:"Enter the distance.", runErrTime:"Enter the time, like 28:45.", gpsReady:"GPS starts measuring when you tap Start Run.", gpsWaiting:"Waiting for GPS signal…", gpsGood:"GPS locked (±{m} m)", gpsWeak:"Weak GPS signal (±{m} m), not counting yet", gpsDenied:"Location permission is off. Allow it in Settings, or enter the distance.", gpsUnavailable:"GPS isn't available on this device.", gpsLost:"GPS stopped. Enter the distance yourself.", gpsOffHint:"Enter the distance yourself, or turn on GPS.", gpsNotifTitle:"Iron Ledger is tracking your run", gpsNotifMessage:"GPS distance is on. Finish the run to stop.", wRunsTotal:"runs", wRunsGroup:"Runs", exRunJog:"Run / Jog", metricDistance:"Distance", metricRuns:"Runs", metricDuration:"Time", btnStartARun:"Start a run",
+      wRunTotalOne:"run"
     },
     es: {
       tabReps:"Reps", tabHistory:"Historial", tabSettings:"Ajustes",
@@ -974,7 +1047,9 @@
       lblSound:"Sonido", lblAutostart:"Iniciar el temporizador automáticamente al registrar",
       noteSynced:"Sincronizado — tu registro se guarda y te sigue en todos los dispositivos.", noteLocal:"Guardando solo localmente en este navegador.",
       wRep:"rep", wReps:"reps",
-      lblTickSound:"Tic de la cuenta atrás", lblBuzzerSound:"Aviso final", soundHint:"Toca un sonido para escucharlo.", sndBuzz:"Zumbido", sndClick:"Clic", sndBeep:"Pitido", sndWood:"Madera", sndThump:"Golpe", sndAlarm:"Alarma", sndChime:"Carillón", sndHorn:"Bocina", sndBell:"Campana de boxeo", sndDigital:"Digital"
+      lblTickSound:"Tic de la cuenta atrás", lblBuzzerSound:"Aviso final", soundHint:"Toca un sonido para escucharlo.", sndBuzz:"Zumbido", sndClick:"Clic", sndBeep:"Pitido", sndWood:"Madera", sndThump:"Golpe", sndAlarm:"Alarma", sndChime:"Carillón", sndHorn:"Bocina", sndBell:"Campana de boxeo", sndDigital:"Digital",
+      segLift:"Pesas", segRun:"Correr", eyebrowLogRun:"REGISTRAR CARRERA", kindRun:"Carrera", kindJog:"Trote", kindWalk:"Caminata", lblTime:"Tiempo", lblDistance:"Distancia", lblUseGps:"Usar GPS para la distancia", btnStartRun:"Empezar", btnPause:"Pausa", btnResume:"Reanudar", btnFinish:"Terminar", btnLogRun:"Registrar carrera", runMsgCheck:"Revisa los datos y toca Registrar carrera.", runMsgLogged:"Carrera registrada.", runErrDistance:"Escribe la distancia.", runErrTime:"Escribe el tiempo, por ejemplo 28:45.", gpsReady:"El GPS empieza a medir al tocar Empezar.", gpsWaiting:"Esperando señal GPS…", gpsGood:"GPS fijado (±{m} m)", gpsWeak:"Señal GPS débil (±{m} m), aún no cuenta", gpsDenied:"El permiso de ubicación está desactivado. Actívalo en Ajustes o escribe la distancia.", gpsUnavailable:"El GPS no está disponible en este dispositivo.", gpsLost:"El GPS se detuvo. Escribe la distancia.", gpsOffHint:"Escribe la distancia o activa el GPS.", gpsNotifTitle:"Iron Ledger está registrando tu carrera", gpsNotifMessage:"La distancia por GPS está activa. Termina la carrera para detenerla.", wRunsTotal:"carreras", wRunsGroup:"Carreras",
+      wRunTotalOne:"carrera"
     },
     fr: {
       tabReps:"Séries", tabHistory:"Historique", tabSettings:"Réglages",
@@ -1003,7 +1078,9 @@
       lblSound:"Son", lblAutostart:"Démarrer le minuteur automatiquement à l'enregistrement",
       noteSynced:"Synchronisé — ton journal est enregistré et te suit sur tous tes appareils.", noteLocal:"Enregistrement local uniquement, dans ce navigateur.",
       wRep:"rep", wReps:"reps",
-      lblTickSound:"Tic du compte à rebours", lblBuzzerSound:"Signal de fin", soundHint:"Touche un son pour l'écouter.", sndBuzz:"Bourdon", sndClick:"Clic", sndBeep:"Bip", sndWood:"Bois", sndThump:"Coup sourd", sndAlarm:"Alarme", sndChime:"Carillon", sndHorn:"Klaxon", sndBell:"Cloche de boxe", sndDigital:"Numérique"
+      lblTickSound:"Tic du compte à rebours", lblBuzzerSound:"Signal de fin", soundHint:"Touche un son pour l'écouter.", sndBuzz:"Bourdon", sndClick:"Clic", sndBeep:"Bip", sndWood:"Bois", sndThump:"Coup sourd", sndAlarm:"Alarme", sndChime:"Carillon", sndHorn:"Klaxon", sndBell:"Cloche de boxe", sndDigital:"Numérique",
+      segLift:"Muscu", segRun:"Course", eyebrowLogRun:"ENREGISTRER UNE COURSE", kindRun:"Course", kindJog:"Footing", kindWalk:"Marche", lblTime:"Temps", lblDistance:"Distance", lblUseGps:"Utiliser le GPS pour la distance", btnStartRun:"Démarrer", btnPause:"Pause", btnResume:"Reprendre", btnFinish:"Terminer", btnLogRun:"Enregistrer la course", runMsgCheck:"Vérifie les valeurs, puis touche Enregistrer la course.", runMsgLogged:"Course enregistrée.", runErrDistance:"Saisis la distance.", runErrTime:"Saisis le temps, par exemple 28:45.", gpsReady:"Le GPS commence à mesurer quand tu touches Démarrer.", gpsWaiting:"En attente du signal GPS…", gpsGood:"GPS verrouillé (±{m} m)", gpsWeak:"Signal GPS faible (±{m} m), pas encore compté", gpsDenied:"La localisation est désactivée. Autorise-la dans les Réglages ou saisis la distance.", gpsUnavailable:"Le GPS n'est pas disponible sur cet appareil.", gpsLost:"Le GPS s'est arrêté. Saisis la distance toi-même.", gpsOffHint:"Saisis la distance toi-même ou active le GPS.", gpsNotifTitle:"Iron Ledger enregistre ta course", gpsNotifMessage:"La distance GPS est activée. Termine la course pour l'arrêter.", wRunsTotal:"courses", wRunsGroup:"Courses",
+      wRunTotalOne:"course"
     },
     de: {
       tabReps:"Sätze", tabHistory:"Verlauf", tabSettings:"Einstellungen",
@@ -1032,7 +1109,9 @@
       lblSound:"Ton", lblAutostart:"Timer beim Erfassen automatisch starten",
       noteSynced:"Synchronisiert — dein Log wird gespeichert und folgt dir auf allen Geräten.", noteLocal:"Wird nur lokal in diesem Browser gespeichert.",
       wRep:"Wdh.", wReps:"Wdh.",
-      lblTickSound:"Countdown-Ticken", lblBuzzerSound:"Signal bei null", soundHint:"Tippe auf einen Ton, um ihn zu hören.", sndBuzz:"Summen", sndClick:"Klick", sndBeep:"Piep", sndWood:"Holzblock", sndThump:"Dumpf", sndAlarm:"Alarm", sndChime:"Glockenspiel", sndHorn:"Hupe", sndBell:"Boxglocke", sndDigital:"Digital"
+      lblTickSound:"Countdown-Ticken", lblBuzzerSound:"Signal bei null", soundHint:"Tippe auf einen Ton, um ihn zu hören.", sndBuzz:"Summen", sndClick:"Klick", sndBeep:"Piep", sndWood:"Holzblock", sndThump:"Dumpf", sndAlarm:"Alarm", sndChime:"Glockenspiel", sndHorn:"Hupe", sndBell:"Boxglocke", sndDigital:"Digital",
+      segLift:"Kraft", segRun:"Laufen", eyebrowLogRun:"LAUF ERFASSEN", kindRun:"Lauf", kindJog:"Jogging", kindWalk:"Gehen", lblTime:"Zeit", lblDistance:"Strecke", lblUseGps:"GPS für die Strecke nutzen", btnStartRun:"Start", btnPause:"Pause", btnResume:"Weiter", btnFinish:"Beenden", btnLogRun:"Lauf erfassen", runMsgCheck:"Prüfe die Werte und tippe dann auf Lauf erfassen.", runMsgLogged:"Lauf erfasst.", runErrDistance:"Gib die Strecke ein.", runErrTime:"Gib die Zeit ein, z. B. 28:45.", gpsReady:"Das GPS misst ab dem Tippen auf Start.", gpsWaiting:"Warte auf GPS-Signal…", gpsGood:"GPS bereit (±{m} m)", gpsWeak:"Schwaches GPS-Signal (±{m} m), zählt noch nicht", gpsDenied:"Standortzugriff ist aus. Erlaube ihn in den Einstellungen oder gib die Strecke ein.", gpsUnavailable:"GPS ist auf diesem Gerät nicht verfügbar.", gpsLost:"GPS wurde beendet. Gib die Strecke selbst ein.", gpsOffHint:"Gib die Strecke selbst ein oder schalte GPS ein.", gpsNotifTitle:"Iron Ledger zeichnet deinen Lauf auf", gpsNotifMessage:"GPS-Strecke ist aktiv. Beende den Lauf, um sie zu stoppen.", wRunsTotal:"Läufe", wRunsGroup:"Läufe",
+      wRunTotalOne:"Lauf"
     },
     pt: {
       tabReps:"Séries", tabHistory:"Histórico", tabSettings:"Config.",
@@ -1061,7 +1140,9 @@
       lblSound:"Som", lblAutostart:"Iniciar o temporizador automaticamente ao registrar",
       noteSynced:"Sincronizado — seu registro é salvo e te acompanha em todos os dispositivos.", noteLocal:"Salvando apenas localmente neste navegador.",
       wRep:"rep", wReps:"reps",
-      lblTickSound:"Tique da contagem", lblBuzzerSound:"Alarme final", soundHint:"Toque em um som para ouvi-lo.", sndBuzz:"Zumbido", sndClick:"Clique", sndBeep:"Bipe", sndWood:"Madeira", sndThump:"Batida", sndAlarm:"Alarme", sndChime:"Carrilhão", sndHorn:"Buzina", sndBell:"Sino de boxe", sndDigital:"Digital"
+      lblTickSound:"Tique da contagem", lblBuzzerSound:"Alarme final", soundHint:"Toque em um som para ouvi-lo.", sndBuzz:"Zumbido", sndClick:"Clique", sndBeep:"Bipe", sndWood:"Madeira", sndThump:"Batida", sndAlarm:"Alarme", sndChime:"Carrilhão", sndHorn:"Buzina", sndBell:"Sino de boxe", sndDigital:"Digital",
+      segLift:"Musculação", segRun:"Corrida", eyebrowLogRun:"REGISTRAR CORRIDA", kindRun:"Corrida", kindJog:"Trote", kindWalk:"Caminhada", lblTime:"Tempo", lblDistance:"Distância", lblUseGps:"Usar GPS para a distância", btnStartRun:"Iniciar", btnPause:"Pausar", btnResume:"Retomar", btnFinish:"Concluir", btnLogRun:"Registrar corrida", runMsgCheck:"Confira os números e toque em Registrar corrida.", runMsgLogged:"Corrida registrada.", runErrDistance:"Digite a distância.", runErrTime:"Digite o tempo, por exemplo 28:45.", gpsReady:"O GPS começa a medir quando você toca em Iniciar.", gpsWaiting:"Aguardando sinal de GPS…", gpsGood:"GPS fixado (±{m} m)", gpsWeak:"Sinal de GPS fraco (±{m} m), ainda não conta", gpsDenied:"A permissão de localização está desativada. Ative nas Configurações ou digite a distância.", gpsUnavailable:"GPS não disponível neste aparelho.", gpsLost:"O GPS parou. Digite a distância.", gpsOffHint:"Digite a distância ou ative o GPS.", gpsNotifTitle:"O Iron Ledger está registrando sua corrida", gpsNotifMessage:"A distância por GPS está ativa. Conclua a corrida para parar.", wRunsTotal:"corridas", wRunsGroup:"Corridas",
+      wRunTotalOne:"corrida"
     },
     it: {
       tabReps:"Serie", tabHistory:"Cronologia", tabSettings:"Impostazioni",
@@ -1090,7 +1171,9 @@
       lblSound:"Suono", lblAutostart:"Avvia il timer automaticamente alla registrazione",
       noteSynced:"Sincronizzato — il tuo registro viene salvato e ti segue su tutti i dispositivi.", noteLocal:"Salvataggio solo locale in questo browser.",
       wRep:"rip.", wReps:"rip.",
-      lblTickSound:"Tic del conto alla rovescia", lblBuzzerSound:"Segnale finale", soundHint:"Tocca un suono per ascoltarlo.", sndBuzz:"Ronzio", sndClick:"Clic", sndBeep:"Bip", sndWood:"Legno", sndThump:"Colpo", sndAlarm:"Allarme", sndChime:"Carillon", sndHorn:"Clacson", sndBell:"Campana da boxe", sndDigital:"Digitale"
+      lblTickSound:"Tic del conto alla rovescia", lblBuzzerSound:"Segnale finale", soundHint:"Tocca un suono per ascoltarlo.", sndBuzz:"Ronzio", sndClick:"Clic", sndBeep:"Bip", sndWood:"Legno", sndThump:"Colpo", sndAlarm:"Allarme", sndChime:"Carillon", sndHorn:"Clacson", sndBell:"Campana da boxe", sndDigital:"Digitale",
+      segLift:"Pesi", segRun:"Corsa", eyebrowLogRun:"REGISTRA UNA CORSA", kindRun:"Corsa", kindJog:"Jogging", kindWalk:"Camminata", lblTime:"Tempo", lblDistance:"Distanza", lblUseGps:"Usa il GPS per la distanza", btnStartRun:"Avvia", btnPause:"Pausa", btnResume:"Riprendi", btnFinish:"Termina", btnLogRun:"Registra corsa", runMsgCheck:"Controlla i valori, poi tocca Registra corsa.", runMsgLogged:"Corsa registrata.", runErrDistance:"Inserisci la distanza.", runErrTime:"Inserisci il tempo, ad esempio 28:45.", gpsReady:"Il GPS inizia a misurare quando tocchi Avvia.", gpsWaiting:"In attesa del segnale GPS…", gpsGood:"GPS agganciato (±{m} m)", gpsWeak:"Segnale GPS debole (±{m} m), non ancora conteggiato", gpsDenied:"La posizione è disattivata. Consentila nelle Impostazioni o inserisci la distanza.", gpsUnavailable:"GPS non disponibile su questo dispositivo.", gpsLost:"Il GPS si è fermato. Inserisci tu la distanza.", gpsOffHint:"Inserisci la distanza o attiva il GPS.", gpsNotifTitle:"Iron Ledger sta registrando la tua corsa", gpsNotifMessage:"La distanza GPS è attiva. Termina la corsa per fermarla.", wRunsTotal:"corse", wRunsGroup:"Corse",
+      wRunTotalOne:"corsa"
     },
     ja: {
       tabReps:"記録", tabHistory:"履歴", tabSettings:"設定",
@@ -1119,7 +1202,9 @@
       lblSound:"サウンド", lblAutostart:"記録時にタイマーを自動開始する",
       noteSynced:"同期済み — 記録は保存され、どの端末からでも確認できます。", noteLocal:"このブラウザにのみローカル保存されています。",
       wRep:"レップ", wReps:"レップ",
-      lblTickSound:"カウントダウン音", lblBuzzerSound:"終了ブザー", soundHint:"タップすると音を確認できます。", sndBuzz:"ブザー", sndClick:"クリック", sndBeep:"ビープ", sndWood:"ウッドブロック", sndThump:"ドン", sndAlarm:"アラーム", sndChime:"チャイム", sndHorn:"ホーン", sndBell:"ボクシングベル", sndDigital:"デジタル"
+      lblTickSound:"カウントダウン音", lblBuzzerSound:"終了ブザー", soundHint:"タップすると音を確認できます。", sndBuzz:"ブザー", sndClick:"クリック", sndBeep:"ビープ", sndWood:"ウッドブロック", sndThump:"ドン", sndAlarm:"アラーム", sndChime:"チャイム", sndHorn:"ホーン", sndBell:"ボクシングベル", sndDigital:"デジタル",
+      segLift:"筋トレ", segRun:"ラン", eyebrowLogRun:"ランを記録", kindRun:"ラン", kindJog:"ジョグ", kindWalk:"ウォーク", lblTime:"タイム", lblDistance:"距離", lblUseGps:"GPSで距離を測る", btnStartRun:"スタート", btnPause:"一時停止", btnResume:"再開", btnFinish:"終了", btnLogRun:"ランを記録", runMsgCheck:"数値を確認して「ランを記録」をタップしてください。", runMsgLogged:"ランを記録しました。", runErrDistance:"距離を入力してください。", runErrTime:"タイムを入力してください(例: 28:45)。", gpsReady:"スタートをタップするとGPSで計測を始めます。", gpsWaiting:"GPS信号を待っています…", gpsGood:"GPS測位中(±{m} m)", gpsWeak:"GPS信号が弱いため(±{m} m)、まだ計測していません", gpsDenied:"位置情報の許可がオフです。設定で許可するか、距離を入力してください。", gpsUnavailable:"この端末ではGPSを使用できません。", gpsLost:"GPSが停止しました。距離を入力してください。", gpsOffHint:"距離を入力するか、GPSをオンにしてください。", gpsNotifTitle:"Iron Ledgerがランを記録中", gpsNotifMessage:"GPS距離計測がオンです。ランを終了すると停止します。", wRunsTotal:"回", wRunsGroup:"ラン",
+      wRunTotalOne:"回"
     },
     zh: {
       tabReps:"记录", tabHistory:"历史", tabSettings:"设置",
@@ -1148,7 +1233,9 @@
       lblSound:"声音", lblAutostart:"记录时自动开始计时",
       noteSynced:"已同步——你的记录已保存,可在所有设备上查看。", noteLocal:"仅保存在此浏览器本地。",
       wRep:"次", wReps:"次",
-      lblTickSound:"倒计时提示音", lblBuzzerSound:"结束提示音", soundHint:"点按即可试听。", sndBuzz:"嗡鸣", sndClick:"咔嗒", sndBeep:"哔声", sndWood:"木鱼", sndThump:"重击", sndAlarm:"警报", sndChime:"风铃", sndHorn:"喇叭", sndBell:"拳击铃", sndDigital:"电子音"
+      lblTickSound:"倒计时提示音", lblBuzzerSound:"结束提示音", soundHint:"点按即可试听。", sndBuzz:"嗡鸣", sndClick:"咔嗒", sndBeep:"哔声", sndWood:"木鱼", sndThump:"重击", sndAlarm:"警报", sndChime:"风铃", sndHorn:"喇叭", sndBell:"拳击铃", sndDigital:"电子音",
+      segLift:"力量", segRun:"跑步", eyebrowLogRun:"记录跑步", kindRun:"跑步", kindJog:"慢跑", kindWalk:"步行", lblTime:"用时", lblDistance:"距离", lblUseGps:"用 GPS 测距离", btnStartRun:"开始", btnPause:"暂停", btnResume:"继续", btnFinish:"结束", btnLogRun:"记录跑步", runMsgCheck:"请核对数据,然后点按“记录跑步”。", runMsgLogged:"已记录跑步。", runErrDistance:"请输入距离。", runErrTime:"请输入用时,例如 28:45。", gpsReady:"点按“开始”后 GPS 开始测距。", gpsWaiting:"正在等待 GPS 信号…", gpsGood:"GPS 已定位(±{m} 米)", gpsWeak:"GPS 信号弱(±{m} 米),暂不计入", gpsDenied:"位置权限已关闭。请在设置中允许,或手动输入距离。", gpsUnavailable:"此设备不支持 GPS。", gpsLost:"GPS 已停止,请手动输入距离。", gpsOffHint:"请手动输入距离,或打开 GPS。", gpsNotifTitle:"Iron Ledger 正在记录你的跑步", gpsNotifMessage:"GPS 测距已开启,结束跑步即可停止。", wRunsTotal:"次", wRunsGroup:"跑步",
+      wRunTotalOne:"次"
     }
   };
 
@@ -1205,7 +1292,8 @@
     isCustom: false,
     unit: "lbs",
     restTarget: 120,
-    sets: []
+    sets: [],
+    runs: []
   };
 
   var ramp = {
@@ -1937,6 +2025,7 @@
 
     var datesWithData = {};
     state.sets.forEach(function (s) { datesWithData[s.dateKey] = true; });
+    state.runs.forEach(function (r) { datesWithData[r.dateKey] = true; });
 
     var firstWeekday = new Date(year, month, 1).getDay();
     var daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -1984,15 +2073,32 @@
     renderDayDetail();
   });
 
+  // Runs in a day's detail: a "Runs" group plus count/distance in the totals.
+  function runsGroupHtml(runs, unit) {
+    var html = '<div class="ex-group"><div class="ex-name">' + escapeHtml(t("wRunsGroup")) + '</div><div class="set-list">';
+    runs.forEach(function (r) {
+      html += '<span class="set-chip">' + escapeHtml(runKindLabel(r.kind) + " · " + runLabel(r, unit)) +
+        (r.gps ? ' <span class="gps">GPS</span>' : '') + '</span>';
+    });
+    return html + '</div></div>';
+  }
+  function runTotalsHtml(runs, unit) {
+    if (!runs.length) return "";
+    var meters = runs.reduce(function (sum, r) { return sum + r.distanceM; }, 0);
+    return '<span><b>' + runs.length + '</b> ' + escapeHtml(t(runs.length === 1 ? "wRunTotalOne" : "wRunsTotal")) + '</span><span><b>' + fmtDistance(meters, unit) + '</b> ' + unit + '</span>';
+  }
+
   function renderDayDetail() {
     var setsForDay = state.sets.filter(function (s) { return s.dateKey === selectedDateKey; })
+      .sort(function (a, b) { return a.loggedAt.localeCompare(b.loggedAt); });
+    var runsForDay = state.runs.filter(function (r) { return r.dateKey === selectedDateKey; })
       .sort(function (a, b) { return a.loggedAt.localeCompare(b.loggedAt); });
 
     var rel = relativeLabel(selectedDateKey);
     var headHtml = '<div class="day-detail-head"><div class="date">' + formatDateKey(selectedDateKey) +
       (rel ? '<span class="rel">' + escapeHtml(rel) + '</span>' : '') + '</div>';
 
-    if (setsForDay.length === 0) {
+    if (setsForDay.length === 0 && runsForDay.length === 0) {
       headHtml += '</div>';
       dayDetail.innerHTML = headHtml + '<div class="day-detail-body"><div class="day-empty">' + escapeHtml(t("dayEmptyMsg")) + '</div></div>';
       return;
@@ -2001,7 +2107,9 @@
     var totalSets = setsForDay.length;
     var totalReps = setsForDay.reduce(function (a, s) { return a + s.reps; }, 0);
     var totalVol = setsForDay.reduce(function (a, s) { return a + s.volume; }, 0);
-    headHtml += '<div class="day-totals"><span><b>' + totalSets + '</b> ' + escapeHtml(t("wSetsTotal")) + '</span><span><b>' + totalReps + '</b> ' + escapeHtml(t("wRepsTotalWord")) + '</span><span><b>' + totalVol.toLocaleString() + '</b> ' + escapeHtml(t("wVolWord")) + '</span></div></div>';
+    var totalsHtml = setsForDay.length ? '<span><b>' + totalSets + '</b> ' + escapeHtml(t("wSetsTotal")) + '</span><span><b>' + totalReps + '</b> ' + escapeHtml(t("wRepsTotalWord")) + '</span><span><b>' + totalVol.toLocaleString() + '</b> ' + escapeHtml(t("wVolWord")) + '</span>' : '';
+    totalsHtml += runTotalsHtml(runsForDay, runState.unit);
+    headHtml += '<div class="day-totals">' + totalsHtml + '</div></div>';
 
     var byExercise = {};
     setsForDay.forEach(function (s) { (byExercise[s.exercise] = byExercise[s.exercise] || []).push(s); });
@@ -2022,6 +2130,7 @@
       });
       bodyHtml += '</div></div>';
     });
+    if (runsForDay.length) bodyHtml += runsGroupHtml(runsForDay, runState.unit);
     bodyHtml += '</div>';
 
     dayDetail.innerHTML = headHtml + bodyHtml;
@@ -2090,6 +2199,453 @@
     el.addEventListener("keydown", function (e) { if (e.key === "Enter") logSet(); });
   });
 
+  // =========================================================================
+  // Runs (run / jog / walk): manual entry or a timer, with optional GPS distance
+  // =========================================================================
+  var RUN_KINDS = ["run", "jog", "walk"];
+  var RUNS_KEY = "iron-ledger-runs-v1";
+  var RUN_PREFS_KEY = "iron-ledger-run-prefs-v1";
+  var RUN_LIVE_KEY = "iron-ledger-run-live-v1";
+  var METERS_PER = { mi: 1609.344, km: 1000 };
+  var GPS_MAX_ACCURACY_M = 30;   // ignore fixes fuzzier than this
+  var GPS_MAX_SPEED_MS = 12;     // ~43 km/h: anything faster is a GPS jump
+
+  var logMode = "lift";
+  var runState = {
+    kind: "run", unit: "mi", useGps: false,
+    status: "idle",            // idle | running | paused
+    startedAt: 0,              // when the current running stretch began (ms)
+    elapsedMs: 0,              // time banked from earlier stretches
+    track: { last: null, distanceM: 0 },
+    gpsWatchId: null, gpsNative: false, gpsAccuracy: null, gpsError: null,
+    gpsFilledValue: null,      // distance text the GPS put in the field at Finish
+    tickId: null
+  };
+
+  var logModeSeg = document.getElementById("logModeSeg");
+  var liftPanel = document.getElementById("liftPanel");
+  var runPanel = document.getElementById("runPanel");
+  var runKindChips = document.getElementById("runKindChips");
+  var runDisplay = document.getElementById("runDisplay");
+  var runTimeOut = document.getElementById("runTimeOut");
+  var runDistOut = document.getElementById("runDistOut");
+  var runPaceOut = document.getElementById("runPaceOut");
+  var runDistUnitLbl = document.getElementById("runDistUnitLbl");
+  var runPaceUnitLbl = document.getElementById("runPaceUnitLbl");
+  var runGpsToggle = document.getElementById("runGpsToggle");
+  var gpsStatus = document.getElementById("gpsStatus");
+  var runStartBtn = document.getElementById("runStartBtn");
+  var runPauseBtn = document.getElementById("runPauseBtn");
+  var runFinishBtn = document.getElementById("runFinishBtn");
+  var runControls = runPauseBtn.parentNode;
+  var runDistInput = document.getElementById("runDistInput");
+  var runUnitMi = document.getElementById("runUnitMi");
+  var runUnitKm = document.getElementById("runUnitKm");
+  var runTimeInput = document.getElementById("runTimeInput");
+  var runLogBtn = document.getElementById("runLogBtn");
+  var runMsg = document.getElementById("runMsg");
+  var runStrip = document.getElementById("runStrip");
+
+  // ---------- Lift / Run switch ----------
+  function setLogMode(mode) {
+    logMode = mode === "run" ? "run" : "lift";
+    liftPanel.style.display = logMode === "lift" ? "" : "none";
+    runPanel.style.display = logMode === "run" ? "" : "none";
+    logModeSeg.querySelectorAll("button").forEach(function (b) {
+      b.classList.toggle("active", b.getAttribute("data-logmode") === logMode);
+    });
+    try { localStorage.setItem("iron-ledger-logmode-v1", logMode); } catch (e) {}
+    if (logMode === "run") renderRunPanel();
+  }
+  logModeSeg.querySelectorAll("button").forEach(function (b) {
+    b.addEventListener("click", function () { setLogMode(b.getAttribute("data-logmode")); });
+  });
+
+  // ---------- Units, formatting, parsing ----------
+  function distInUnit(meters, unit) { return meters / METERS_PER[unit]; }
+  function fmtDistance(meters, unit) { return distInUnit(meters, unit).toFixed(2); }
+  function fmtDuration(totalSeconds) {
+    var s = Math.max(0, Math.round(totalSeconds));
+    var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
+    return (h > 0 ? h + ":" + (m < 10 ? "0" : "") : "") + m + ":" + (r < 10 ? "0" : "") + r;
+  }
+  // Time per mile/km, e.g. "9:16"; "–" until there is enough distance.
+  function fmtPace(seconds, meters, unit) {
+    var d = distInUnit(meters, unit);
+    if (!(d >= 0.01) || !(seconds >= 1)) return "–";
+    return fmtDuration(seconds / d);
+  }
+  // "28:45" -> 1725 s, "1:02:03" -> 3723 s, and a bare number means minutes ("45" -> 2700 s).
+  function parseDuration(text) {
+    var s = String(text || "").trim();
+    if (!s) return null;
+    if (/^\d+(\.\d+)?$/.test(s)) return Math.round(parseFloat(s) * 60);
+    var parts = s.split(":");
+    if (parts.length < 2 || parts.length > 3) return null;
+    for (var i = 0; i < parts.length; i++) { if (!/^\d+$/.test(parts[i])) return null; }
+    var n = parts.map(Number);
+    if (n[n.length - 1] >= 60 || (n.length === 3 && n[1] >= 60)) return null;
+    return n.length === 3 ? n[0] * 3600 + n[1] * 60 + n[2] : n[0] * 60 + n[1];
+  }
+  function runKindLabel(kind) { return t({ run: "kindRun", jog: "kindJog", walk: "kindWalk" }[kind] || "kindRun"); }
+  function runLabel(r, unit) {
+    return fmtDistance(r.distanceM, unit) + " " + unit + " · " + fmtDuration(r.durationS) + " · " +
+      fmtPace(r.durationS, r.distanceM, unit) + "/" + unit;
+  }
+
+  // ---------- GPS distance ----------
+  function haversineM(a, b) {
+    var R = 6371008.8, rad = Math.PI / 180;
+    var dLat = (b.lat - a.lat) * rad, dLon = (b.lon - a.lon) * rad;
+    var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+  }
+  // Adds one GPS fix to a track and returns the metres added. Fuzzy fixes are
+  // ignored, standing-still jitter doesn't count (the anchor only moves once
+  // you've really moved), and impossible jumps re-anchor without counting.
+  function trackAddFix(track, fix) {
+    if (!(fix.acc > 0) || fix.acc > GPS_MAX_ACCURACY_M) return 0;
+    if (!track.last) { track.last = fix; return 0; }
+    var d = haversineM(track.last, fix);
+    var dt = Math.max(0.5, (fix.t - track.last.t) / 1000);
+    if (d < Math.max(3, Math.min(fix.acc, track.last.acc) / 2)) return 0;
+    if (d / dt > GPS_MAX_SPEED_MS) { track.last = fix; return 0; }
+    track.last = fix;
+    track.distanceM += d;
+    return d;
+  }
+
+  // On the phone this uses the background-geolocation plugin, which keeps
+  // tracking with the screen off (Android shows a "tracking your run"
+  // notification). In a plain browser it falls back to navigator.geolocation.
+  function nativeGeolocation() {
+    var cap = window.Capacitor;
+    return (cap && cap.Plugins && cap.Plugins.BackgroundGeolocation) || null;
+  }
+  function onGpsFix(fix) {
+    runState.gpsAccuracy = fix.acc;
+    runState.gpsError = null;
+    if (runState.status === "running") trackAddFix(runState.track, fix);
+    saveLiveRun();
+    renderRunDisplay();
+  }
+  function onGpsError(kind) {
+    runState.gpsError = kind;   // "denied" | "unavailable" | "error"
+    renderRunDisplay();
+  }
+  function startGps() {
+    if (runState.gpsWatchId !== null) return;
+    runState.gpsError = null;
+    runState.gpsAccuracy = null;
+    var plugin = nativeGeolocation();
+    if (plugin) {
+      runState.gpsNative = true;
+      runState.gpsWatchId = "pending";
+      var result;
+      try {
+        result = plugin.addWatcher({
+          backgroundTitle: t("gpsNotifTitle"),
+          backgroundMessage: t("gpsNotifMessage"),
+          requestPermissions: true,
+          stale: false,
+          distanceFilter: 2
+        }, function (loc, err) {
+          if (err) { onGpsError(err.code === "NOT_AUTHORIZED" ? "denied" : "error"); return; }
+          if (loc) onGpsFix({ lat: loc.latitude, lon: loc.longitude, acc: loc.accuracy, t: loc.time || Date.now() });
+        });
+      } catch (e) { runState.gpsWatchId = null; onGpsError("error"); return; }
+      Promise.resolve(result).then(function (id) {
+        if (runState.gpsWatchId === "pending") runState.gpsWatchId = id;
+        else { try { Promise.resolve(plugin.removeWatcher({ id: id })).catch(function () {}); } catch (e) {} }
+      }, function () { runState.gpsWatchId = null; onGpsError("error"); });
+    } else if (navigator.geolocation && navigator.geolocation.watchPosition) {
+      runState.gpsNative = false;
+      runState.gpsWatchId = navigator.geolocation.watchPosition(function (p) {
+        onGpsFix({ lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy, t: p.timestamp || Date.now() });
+      }, function (e) { onGpsError(e && e.code === 1 ? "denied" : "error"); },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 60000 });
+    } else {
+      onGpsError("unavailable");
+    }
+  }
+  function stopGps() {
+    var id = runState.gpsWatchId;
+    runState.gpsWatchId = null;
+    if (id === null || id === undefined || id === "pending") return;
+    if (runState.gpsNative) {
+      var plugin = nativeGeolocation();
+      if (plugin) { try { Promise.resolve(plugin.removeWatcher({ id: id })).catch(function () {}); } catch (e) {} }
+    } else if (navigator.geolocation) {
+      navigator.geolocation.clearWatch(id);
+    }
+  }
+
+  // ---------- Timer ----------
+  function runElapsedMs() {
+    return runState.elapsedMs + (runState.status === "running" ? Date.now() - runState.startedAt : 0);
+  }
+  function startRunTicker() {
+    stopRunTicker();
+    runState.tickId = setInterval(function () { renderRunDisplay(); saveLiveRun(); }, 500);
+  }
+  function stopRunTicker() {
+    if (runState.tickId) { clearInterval(runState.tickId); runState.tickId = null; }
+  }
+  function showRunMsg(key, ok) { runMsg.textContent = t(key); runMsg.className = "auth-msg" + (ok ? " ok" : " err"); }
+  function clearRunMsg() { runMsg.textContent = ""; runMsg.className = "auth-msg"; }
+
+  function startRun() {
+    clearRunMsg();
+    runState.status = "running";
+    runState.startedAt = Date.now();
+    runState.elapsedMs = 0;
+    runState.track = { last: null, distanceM: 0 };
+    runState.gpsFilledValue = null;
+    if (runState.useGps) startGps();
+    startRunTicker();
+    saveLiveRun();
+    renderRunPanel();
+  }
+  function pauseOrResumeRun() {
+    if (runState.status === "running") {
+      runState.elapsedMs = runElapsedMs();
+      runState.status = "paused";
+    } else if (runState.status === "paused") {
+      runState.status = "running";
+      runState.startedAt = Date.now();
+      if (runState.useGps) startGps();
+    }
+    runState.track.last = null;   // never count the distance covered while paused
+    saveLiveRun();
+    renderRunPanel();
+  }
+  function finishRun() {
+    if (runState.status === "idle") return;
+    var seconds = Math.round(runElapsedMs() / 1000);
+    stopGps();
+    stopRunTicker();
+    runState.status = "idle";
+    runTimeInput.value = fmtDuration(seconds);
+    if (runState.useGps && runState.track.distanceM > 0) {
+      runDistInput.value = fmtDistance(runState.track.distanceM, runState.unit);
+      runState.gpsFilledValue = runDistInput.value;
+    }
+    clearLiveRun();
+    renderRunPanel();
+    showRunMsg("runMsgCheck", true);
+  }
+  runStartBtn.addEventListener("click", startRun);
+  runPauseBtn.addEventListener("click", pauseOrResumeRun);
+  runFinishBtn.addEventListener("click", finishRun);
+
+  // ---------- Live-run recovery (Android may close the app mid-run) ----------
+  function saveLiveRun() {
+    if (runState.status === "idle") return;
+    try {
+      localStorage.setItem(RUN_LIVE_KEY, JSON.stringify({
+        kind: runState.kind, unit: runState.unit, useGps: runState.useGps, status: runState.status,
+        startedAt: runState.startedAt, elapsedMs: runState.elapsedMs, distanceM: runState.track.distanceM
+      }));
+    } catch (e) {}
+  }
+  function clearLiveRun() { try { localStorage.removeItem(RUN_LIVE_KEY); } catch (e) {} }
+  function restoreLiveRun() {
+    var live = null;
+    try { live = JSON.parse(localStorage.getItem(RUN_LIVE_KEY) || "null"); } catch (e) {}
+    if (!live || (live.status !== "running" && live.status !== "paused")) return;
+    if (Date.now() - live.startedAt > 12 * 3600 * 1000) { clearLiveRun(); return; }
+    runState.kind = RUN_KINDS.indexOf(live.kind) !== -1 ? live.kind : "run";
+    runState.unit = live.unit === "km" ? "km" : "mi";
+    runState.useGps = !!live.useGps;
+    runState.status = live.status;
+    runState.startedAt = live.startedAt;
+    runState.elapsedMs = live.elapsedMs || 0;
+    runState.track = { last: null, distanceM: live.distanceM || 0 };
+    if (runState.status === "running") {
+      if (runState.useGps) startGps();
+      startRunTicker();
+    }
+    setLogMode("run");
+  }
+
+  // ---------- Preferences ----------
+  function saveRunPrefs() {
+    try { localStorage.setItem(RUN_PREFS_KEY, JSON.stringify({ kind: runState.kind, unit: runState.unit, useGps: runState.useGps })); } catch (e) {}
+  }
+  function loadRunPrefs() {
+    try {
+      var p = JSON.parse(localStorage.getItem(RUN_PREFS_KEY) || "null");
+      if (p) {
+        if (RUN_KINDS.indexOf(p.kind) !== -1) runState.kind = p.kind;
+        if (p.unit === "km" || p.unit === "mi") runState.unit = p.unit;
+        runState.useGps = !!p.useGps;
+      }
+    } catch (e) {}
+  }
+
+  runGpsToggle.addEventListener("change", function () {
+    runState.useGps = runGpsToggle.checked;
+    saveRunPrefs();
+    if (runState.useGps && runState.status === "running") startGps();
+    if (!runState.useGps) stopGps();
+    renderRunPanel();
+  });
+  function setRunUnit(unit) {
+    if (unit === runState.unit) return;
+    // Keep the typed distance the same real distance in the new unit.
+    var v = parseFloat(runDistInput.value);
+    if (v > 0) runDistInput.value = (v * METERS_PER[runState.unit] / METERS_PER[unit]).toFixed(2);
+    runState.unit = unit;
+    saveRunPrefs();
+    saveLiveRun();
+    renderRunPanel();
+  }
+  runUnitMi.addEventListener("click", function () { setRunUnit("mi"); });
+  runUnitKm.addEventListener("click", function () { setRunUnit("km"); });
+  [runDistInput, runTimeInput].forEach(function (el) {
+    el.addEventListener("input", renderRunDisplay);
+    el.addEventListener("keydown", function (e) { if (e.key === "Enter") logRun(); });
+  });
+
+  // ---------- Rendering ----------
+  function currentRunDistanceM() {
+    if (runState.useGps && runState.status !== "idle") return runState.track.distanceM;
+    var v = parseFloat(runDistInput.value);
+    return v > 0 ? v * METERS_PER[runState.unit] : 0;
+  }
+  function currentRunSeconds() {
+    if (runState.status !== "idle") return runElapsedMs() / 1000;
+    return parseDuration(runTimeInput.value) || 0;
+  }
+  function gpsStatusText() {
+    if (!runState.useGps) return { text: t("gpsOffHint"), cls: "" };
+    if (runState.gpsError === "denied") return { text: t("gpsDenied"), cls: "bad" };
+    if (runState.gpsError === "unavailable") return { text: t("gpsUnavailable"), cls: "bad" };
+    if (runState.gpsError) return { text: t("gpsLost"), cls: "bad" };
+    if (runState.status === "idle") return { text: t("gpsReady"), cls: "" };
+    if (runState.gpsAccuracy == null) return { text: t("gpsWaiting"), cls: "" };
+    var m = String(Math.round(runState.gpsAccuracy));
+    if (runState.gpsAccuracy <= GPS_MAX_ACCURACY_M) return { text: t("gpsGood").replace("{m}", m), cls: "good" };
+    return { text: t("gpsWeak").replace("{m}", m), cls: "" };
+  }
+  function renderRunDisplay() {
+    var secs = currentRunSeconds(), meters = currentRunDistanceM();
+    runTimeOut.textContent = fmtDuration(secs);
+    runDistOut.textContent = fmtDistance(meters, runState.unit);
+    runPaceOut.textContent = fmtPace(secs, meters, runState.unit);
+    runDistUnitLbl.textContent = runState.unit;
+    runPaceUnitLbl.textContent = "/" + runState.unit;
+    runDisplay.classList.toggle("live", runState.status === "running");
+    var gs = gpsStatusText();
+    gpsStatus.textContent = gs.text;
+    gpsStatus.className = "run-sub" + (gs.cls ? " " + gs.cls : "");
+  }
+  function renderRunKindChips() {
+    runKindChips.innerHTML = "";
+    RUN_KINDS.forEach(function (k) {
+      var chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chip" + (runState.kind === k ? " active" : "");
+      chip.textContent = runKindLabel(k);
+      chip.addEventListener("click", function () {
+        runState.kind = k;
+        saveRunPrefs();
+        saveLiveRun();
+        renderRunKindChips();
+      });
+      runKindChips.appendChild(chip);
+    });
+  }
+  function renderRunStrip() {
+    var key = todayKeyFn();
+    var todays = state.runs.filter(function (r) { return r.dateKey === key; })
+      .sort(function (a, b) { return a.loggedAt.localeCompare(b.loggedAt); });
+    runStrip.innerHTML = "";
+    runStrip.classList.toggle("empty", todays.length === 0);
+    todays.forEach(function (r) {
+      var pill = document.createElement("div");
+      pill.className = "set-pill";
+      pill.innerHTML = '<span class="ex">' + escapeHtml(runKindLabel(r.kind)) + '</span>' +
+        '<span class="vals">' + escapeHtml(runLabel(r, runState.unit)) + '</span>' +
+        (r.gps ? '<span class="gps">GPS</span>' : '');
+      var del = document.createElement("button");
+      del.className = "del";
+      del.setAttribute("aria-label", "Delete run");
+      del.textContent = "✕";
+      del.addEventListener("click", function () { deleteRun(r.id); });
+      pill.appendChild(del);
+      runStrip.appendChild(pill);
+    });
+  }
+  function renderRunPanel() {
+    var s = runState.status;
+    runStartBtn.style.display = s === "idle" ? "" : "none";
+    runControls.style.display = s === "idle" ? "none" : "";
+    runPauseBtn.textContent = s === "paused" ? t("btnResume") : t("btnPause");
+    runLogBtn.style.display = s === "idle" ? "" : "none";
+    runTimeInput.disabled = s !== "idle";
+    runDistInput.disabled = s !== "idle" && runState.useGps;
+    runUnitMi.classList.toggle("active", runState.unit === "mi");
+    runUnitKm.classList.toggle("active", runState.unit === "km");
+    runGpsToggle.checked = runState.useGps;
+    renderRunKindChips();
+    renderRunDisplay();
+    renderRunStrip();
+  }
+
+  // ---------- Logging + storage ----------
+  function loadRuns() {
+    try { var raw = localStorage.getItem(RUNS_KEY); return raw ? JSON.parse(raw) : []; } catch (e) { return []; }
+  }
+  function saveRuns() {
+    try { localStorage.setItem(RUNS_KEY, JSON.stringify(state.runs)); } catch (e) {}
+  }
+  function logRun() {
+    if (runState.status !== "idle") return;
+    var dist = parseFloat(runDistInput.value);
+    var secs = parseDuration(runTimeInput.value);
+    var meters = dist * METERS_PER[runState.unit];
+    if (!(dist > 0) || meters > 500000) { showRunMsg("runErrDistance"); runDistInput.focus(); return; }
+    if (!(secs > 0) || secs > 172800) { showRunMsg("runErrTime"); runTimeInput.focus(); return; }
+    var now = new Date();
+    var entry = {
+      id: "r" + now.getTime() + Math.random().toString(36).slice(2, 7),
+      kind: runState.kind,
+      distanceM: Math.round(meters * 10) / 10,
+      durationS: secs,
+      unit: runState.unit,
+      gps: runState.gpsFilledValue !== null && runDistInput.value === runState.gpsFilledValue,
+      loggedAt: now.toISOString(),
+      dateKey: todayKeyFn(now)
+    };
+    state.runs.push(entry);
+    saveRuns();
+    sbPushRun(entry);
+    runDistInput.value = "";
+    runTimeInput.value = "";
+    runState.gpsFilledValue = null;
+    selectedDateKey = entry.dateKey;
+    if (calendarMonth.getFullYear() !== now.getFullYear() || calendarMonth.getMonth() !== now.getMonth()) {
+      calendarMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+    render();
+    renderRunPanel();
+    showRunMsg("runMsgLogged", true);
+  }
+  function deleteRun(id) {
+    state.runs = state.runs.filter(function (r) { return r.id !== id; });
+    saveRuns();
+    sbDeleteRun(id);
+    render();
+    renderRunPanel();
+  }
+  runLogBtn.addEventListener("click", logRun);
+
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden && runState.status !== "idle") renderRunDisplay();
+  });
+
   // ---------- Persistence (db capability, with local fallback) ----------
   var LOCAL_KEY = "iron-ledger-sets-v1";
 
@@ -2152,9 +2708,11 @@
   var METRICS_BY_FORMAT = {
     free: ["volume", "reps", "sets", "streak"],
     ramp: ["completions", "volume", "reps", "sets"],
-    ladder: ["completions", "reps", "sets"]
+    ladder: ["completions", "reps", "sets"],
+    run: ["distance", "runs", "duration", "streak"]
   };
-  var NC_ANY = "";   // "Any exercise"
+  var NC_ANY = "";          // "Any exercise"
+  var NC_RUN = "__run__";   // "Run / Jog" (runs, not sets)
   var nc = { exercise: NC_ANY, isCustom: false, format: "free", unit: "lbs" };
   var fcState = { friendId: null, friendName: "", sets: [], month: new Date(), selectedDateKey: todayKeyFn() };
 
@@ -2289,6 +2847,7 @@
     loadOrCreateProfile().then(function () {
       renderProfileCard();
       syncLocalSetsToSupabase();
+      syncLocalRunsToSupabase();
       loadFriendRequests();
       loadFriends();
       loadChallenges();
@@ -2563,8 +3122,15 @@
 
   // ---------- Challenges ----------
   function metricLabel(metric) {
-    var key = { volume: "metricVolume", reps: "metricReps", sets: "metricSets", streak: "metricStreak", completions: "metricCompletions" }[metric];
+    var key = { volume: "metricVolume", reps: "metricReps", sets: "metricSets", streak: "metricStreak", completions: "metricCompletions",
+                distance: "metricDistance", runs: "metricRuns", duration: "metricDuration" }[metric];
     return t(key || "metricVolume");
+  }
+  // Distance shows in your mi/km choice, time as h:mm:ss, everything else as a number.
+  function fmtMetricValue(metric, v) {
+    if (metric === "distance") return fmtDistance(Number(v) || 0, runState.unit) + " " + runState.unit;
+    if (metric === "duration") return fmtDuration(Number(v) || 0);
+    return fmtStat(v);
   }
   // On a card, a streak challenge's own streak is labelled as such so it isn't
   // confused with each person's personal (all-time) streak.
@@ -2591,12 +3157,14 @@
 
   function statValue(s, metric) {
     if (!s) return 0;
-    var v = { volume: s.volume_total, reps: s.rep_count, sets: s.set_count, streak: s.challenge_streak, completions: s.completions }[metric];
+    var v = { volume: s.volume_total, reps: s.rep_count, sets: s.set_count, streak: s.challenge_streak, completions: s.completions,
+              distance: s.distance_m, runs: s.run_count, duration: s.duration_s }[metric];
     return Number(v) || 0;
   }
 
   // Human-readable workout line for a card, or null for "any exercise, free sets".
   function describeSetup(c) {
+    if (c.mode === "run") return { title: t("exRunJog"), detail: "" };
     if (!c.exercise && c.mode === "free") return null;
     var title = c.exercise ? exerciseLabel(c.exercise) : t("exAnyExercise");
     var detail = "";
@@ -2615,6 +3183,7 @@
   }
 
   function startLabel(c) {
+    if (c.mode === "run") return t("btnStartARun");
     if (c.mode === "ramp") return t("btnStartThisRamp");
     if (c.mode === "ladder") return t("btnStartThisLadder");
     return t("btnTrainThis");
@@ -2628,7 +3197,14 @@
   // Loads a challenge's workout on the Reps tab: selects the exercise and, for a
   // ramp/ladder, starts that exact setup so the sets count toward the challenge.
   function startChallengeWorkout(c) {
+    if (c.mode === "run") {
+      switchTab("reps");
+      setLogMode("run");
+      try { window.scrollTo(0, 0); } catch (e) {}
+      return;
+    }
     if (!c.exercise) return;
+    setLogMode("lift");
     selectExerciseForLogging(c.exercise);
     var s = c.setup;
     if (c.mode === "ramp" && s) {
@@ -2703,11 +3279,11 @@
   }
 
   // One row of a card's totals table: label, your number, their number.
-  function csRow(label, a, b) {
+  function csRow(label, a, b, metric) {
     var na = Number(a) || 0, nb = Number(b) || 0;
     return '<span class="cs-l">' + escapeHtml(label) + '</span>' +
-      '<span class="cs-v' + (na > nb ? ' lead' : '') + '">' + fmtStat(na) + '</span>' +
-      '<span class="cs-v' + (nb > na ? ' lead' : '') + '">' + fmtStat(nb) + '</span>';
+      '<span class="cs-v' + (na > nb ? ' lead' : '') + '">' + escapeHtml(fmtMetricValue(metric || "", na)) + '</span>' +
+      '<span class="cs-v' + (nb > na ? ' lead' : '') + '">' + escapeHtml(fmtMetricValue(metric || "", nb)) + '</span>';
   }
 
   function renderChallenges() {
@@ -2744,24 +3320,32 @@
           var theirs = statValue(c.stats.theirs, c.metric);
           var max = Math.max(mine, theirs, 1);
           html += '<div class="challenge-progress">';
-          html += '<div class="cp-row' + (mine > theirs ? ' lead' : '') + '"><span class="cp-name">' + escapeHtml(you) + '</span><div class="cp-bar"><div class="cp-fill" style="width:' + Math.round(mine / max * 100) + '%"></div></div><span class="cp-val">' + fmtStat(mine) + '</span></div>';
-          html += '<div class="cp-row' + (theirs > mine ? ' lead' : '') + '"><span class="cp-name">' + escapeHtml(them) + '</span><div class="cp-bar"><div class="cp-fill" style="width:' + Math.round(theirs / max * 100) + '%"></div></div><span class="cp-val">' + fmtStat(theirs) + '</span></div>';
+          html += '<div class="cp-row' + (mine > theirs ? ' lead' : '') + '"><span class="cp-name">' + escapeHtml(you) + '</span><div class="cp-bar"><div class="cp-fill" style="width:' + Math.round(mine / max * 100) + '%"></div></div><span class="cp-val">' + escapeHtml(fmtMetricValue(c.metric, mine)) + '</span></div>';
+          html += '<div class="cp-row' + (theirs > mine ? ' lead' : '') + '"><span class="cp-name">' + escapeHtml(them) + '</span><div class="cp-bar"><div class="cp-fill" style="width:' + Math.round(theirs / max * 100) + '%"></div></div><span class="cp-val">' + escapeHtml(fmtMetricValue(c.metric, theirs)) + '</span></div>';
           html += '</div>';
 
           // Totals for both people, counting only what's in this challenge.
           var a = c.stats.mine, b = c.stats.theirs;
           html += '<div class="cs-table">';
           html += '<span></span><span class="cs-h">' + escapeHtml(you) + '</span><span class="cs-h">' + escapeHtml(them) + '</span>';
-          html += csRow(t("lblSets"), a.set_count, b.set_count);
-          html += csRow(t("lblReps"), a.rep_count, b.rep_count);
-          html += csRow(t("lblVolume"), a.volume_total, b.volume_total);
-          if (c.mode !== "free") html += csRow(t("metricCompletions"), a.completions, b.completions);
+          if (c.mode === "run") {
+            html += csRow(t("metricRuns"), a.run_count, b.run_count);
+            html += csRow(t("metricDistance"), a.distance_m, b.distance_m, "distance");
+            html += csRow(t("metricDuration"), a.duration_s, b.duration_s, "duration");
+          } else {
+            html += csRow(t("lblSets"), a.set_count, b.set_count);
+            html += csRow(t("lblReps"), a.rep_count, b.rep_count);
+            html += csRow(t("lblVolume"), a.volume_total, b.volume_total);
+            if (c.mode === "ramp" || c.mode === "ladder") html += csRow(t("metricCompletions"), a.completions, b.completions);
+            // Runs count as training days for an "any exercise" streak.
+            if (c.mode === "free" && !c.exercise && c.metric === "streak") html += csRow(t("metricRuns"), a.run_count, b.run_count);
+          }
           if (c.metric === "streak") html += csRow(t("lblPersonalStreak"), a.personal_streak, b.personal_streak);
           html += '</div>';
         }
         var ended = daysBetweenKeys(todayKeyFn(), c.end_date) < 0;
         html += '<div class="challenge-foot"><span class="challenge-meta">' + escapeHtml(daysLeftLabel(c.end_date)) + '</span>';
-        if (!ended && c.exercise) {
+        if (!ended && (c.exercise || c.mode === "run")) {
           html += '<button type="button" class="fr-btn start" data-start="' + c.id + '">' + escapeHtml(startLabel(c)) + '</button>';
         }
         html += '</div>';
@@ -2801,7 +3385,10 @@
   }
 
   // ---------- New challenge form ----------
-  function ncExerciseName() { return nc.isCustom ? ncCustomExercise.value.trim() : nc.exercise; }
+  function ncExerciseName() {
+    if (nc.isCustom) return ncCustomExercise.value.trim();
+    return nc.exercise === NC_RUN ? "" : nc.exercise;
+  }
 
   function openNewChallengeForm(friend) {
     pendingChallengeOpponent = friend;
@@ -2848,8 +3435,12 @@
 
   function setNcFormat(format) {
     nc.format = format;
-    // A ramp or ladder needs a specific exercise: default to the one on your Reps tab.
-    if (format !== "free" && !nc.isCustom && nc.exercise === NC_ANY) {
+    if (format === "run") {
+      // Run / Jog challenges count runs, so there's no exercise or setup.
+      nc.isCustom = false;
+      nc.exercise = NC_RUN;
+    } else if (format !== "free" && !nc.isCustom && (nc.exercise === NC_ANY || nc.exercise === NC_RUN)) {
+      // A ramp or ladder needs a specific exercise: default to the one on your Reps tab.
       var current = currentExerciseName();
       if (state.isCustom && current) {
         nc.isCustom = true;
@@ -2873,19 +3464,22 @@
 
   function renderNcExerciseChips() {
     ncExerciseChips.innerHTML = "";
-    [NC_ANY].concat(COMMON_EXERCISES).forEach(function (name) {
-      ncExerciseChips.appendChild(makeChip(name === NC_ANY ? t("exAnyExercise") : exerciseLabel(name),
-        !nc.isCustom && nc.exercise === name, function () {
-          nc.isCustom = false;
-          nc.exercise = name;
-          // "Any exercise" only works with free sets.
-          if (name === NC_ANY && nc.format !== "free") { setNcFormat("free"); return; }
-          renderNcExerciseChips();
-        }));
+    [NC_ANY].concat(COMMON_EXERCISES).concat([NC_RUN]).forEach(function (name) {
+      var label = name === NC_ANY ? t("exAnyExercise") : name === NC_RUN ? t("exRunJog") : exerciseLabel(name);
+      ncExerciseChips.appendChild(makeChip(label, !nc.isCustom && nc.exercise === name, function () {
+        if (name === NC_RUN) { setNcFormat("run"); return; }
+        var leavingRun = nc.format === "run";
+        nc.isCustom = false;
+        nc.exercise = name;
+        // "Any exercise" only works with free sets; leaving Run / Jog goes back to free sets.
+        if (leavingRun || (name === NC_ANY && nc.format !== "free")) { setNcFormat("free"); return; }
+        renderNcExerciseChips();
+      }));
     });
     ncExerciseChips.appendChild(makeChip(t("exCustom"), nc.isCustom, function () {
       nc.isCustom = true;
-      renderNcExerciseChips();
+      if (nc.format === "run") { nc.exercise = NC_ANY; setNcFormat("free"); }
+      else renderNcExerciseChips();
       ncCustomExercise.focus();
     }));
     ncCustomWrap.classList.toggle("show", nc.isCustom);
@@ -2899,6 +3493,7 @@
     });
     ncRampConfig.classList.toggle("show", nc.format === "ramp");
     ncLadderConfig.classList.toggle("show", nc.format === "ladder");
+    ncFormatChips.parentNode.style.display = nc.format === "run" ? "none" : "";
   }
 
   function renderNcUnit() {
@@ -2964,7 +3559,7 @@
     var exercise = ncExerciseName();
     if (nc.isCustom && !exercise) { showNcError("ncErrExercise"); ncCustomExercise.focus(); return; }
     var setup = null;
-    if (nc.format !== "free") {
+    if (nc.format === "ramp" || nc.format === "ladder") {
       setup = readNcSetup();
       if (!setup) { showNcError("ncErrSetup"); return; }
     }
@@ -3018,11 +3613,13 @@
     friendsChallengeForm.style.display = "none";
     friendsCalendarView.style.display = "";
     fcGrid.innerHTML = ""; fcDayDetail.innerHTML = "";
-    sb.from("workout_sets").select("*").eq("user_id", friend.id).order("logged_at", { ascending: true }).then(function (res) {
-      fcState.sets = (res.data || []).map(mapRowToSet);
-      renderFriendCalendar();
-      renderFriendDayDetail();
-    }).catch(function () { renderFriendCalendar(); renderFriendDayDetail(); });
+    fcState.runs = [];
+    Promise.all([
+      sb.from("workout_sets").select("*").eq("user_id", friend.id).order("logged_at", { ascending: true })
+        .then(function (res) { fcState.sets = ((res && res.data) || []).map(mapRowToSet); }).catch(function () {}),
+      sb.from("runs").select("*").eq("user_id", friend.id).order("logged_at", { ascending: true })
+        .then(function (res) { fcState.runs = ((res && res.data) || []).map(mapRowToRun); }).catch(function () {})
+    ]).then(function () { renderFriendCalendar(); renderFriendDayDetail(); });
   }
   fcBackBtn.addEventListener("click", function () {
     friendsCalendarView.style.display = "none";
@@ -3049,6 +3646,7 @@
     });
     var datesWithData = {};
     fcState.sets.forEach(function (s) { datesWithData[s.dateKey] = true; });
+    (fcState.runs || []).forEach(function (r) { datesWithData[r.dateKey] = true; });
     var firstWeekday = new Date(year, month, 1).getDay();
     var daysInMonth = new Date(year, month + 1, 0).getDate();
     var todayStr = todayKeyFn();
@@ -3081,10 +3679,12 @@
   function renderFriendDayDetail() {
     var setsForDay = fcState.sets.filter(function (s) { return s.dateKey === fcState.selectedDateKey; })
       .sort(function (a, b) { return a.loggedAt.localeCompare(b.loggedAt); });
+    var runsForDay = (fcState.runs || []).filter(function (r) { return r.dateKey === fcState.selectedDateKey; })
+      .sort(function (a, b) { return a.loggedAt.localeCompare(b.loggedAt); });
     var rel = relativeLabel(fcState.selectedDateKey);
     var headHtml = '<div class="day-detail-head"><div class="date">' + formatDateKey(fcState.selectedDateKey) +
       (rel ? '<span class="rel">' + escapeHtml(rel) + '</span>' : '') + '</div>';
-    if (setsForDay.length === 0) {
+    if (setsForDay.length === 0 && runsForDay.length === 0) {
       headHtml += '</div>';
       fcDayDetail.innerHTML = headHtml + '<div class="day-detail-body"><div class="day-empty">' + escapeHtml(t("friendCalEmpty")) + '</div></div>';
       return;
@@ -3092,7 +3692,9 @@
     var totalSets = setsForDay.length;
     var totalReps = setsForDay.reduce(function (a, s) { return a + s.reps; }, 0);
     var totalVol = setsForDay.reduce(function (a, s) { return a + s.volume; }, 0);
-    headHtml += '<div class="day-totals"><span><b>' + totalSets + '</b> ' + escapeHtml(t("wSetsTotal")) + '</span><span><b>' + totalReps + '</b> ' + escapeHtml(t("wRepsTotalWord")) + '</span><span><b>' + totalVol.toLocaleString() + '</b> ' + escapeHtml(t("wVolWord")) + '</span></div></div>';
+    var totalsHtml = setsForDay.length ? '<span><b>' + totalSets + '</b> ' + escapeHtml(t("wSetsTotal")) + '</span><span><b>' + totalReps + '</b> ' + escapeHtml(t("wRepsTotalWord")) + '</span><span><b>' + totalVol.toLocaleString() + '</b> ' + escapeHtml(t("wVolWord")) + '</span>' : '';
+    totalsHtml += runTotalsHtml(runsForDay, runState.unit);
+    headHtml += '<div class="day-totals">' + totalsHtml + '</div></div>';
     var byExercise = {};
     setsForDay.forEach(function (s) { (byExercise[s.exercise] = byExercise[s.exercise] || []).push(s); });
     var bodyHtml = '<div class="day-detail-body">';
@@ -3111,6 +3713,7 @@
       });
       bodyHtml += '</div></div>';
     });
+    if (runsForDay.length) bodyHtml += runsGroupHtml(runsForDay, runState.unit);
     bodyHtml += '</div>';
     fcDayDetail.innerHTML = headHtml + bodyHtml;
   }
@@ -3144,6 +3747,48 @@
     sb.from("workout_sets").delete().eq("id", id).then(function () {}).catch(function () {});
   }
 
+  // ---------- Runs <-> Supabase ----------
+  function mapRunToRow(r) {
+    return {
+      id: r.id, user_id: sbUser.id, kind: r.kind || "run", distance_m: r.distanceM, duration_s: r.durationS,
+      unit: r.unit || "mi", gps: !!r.gps, logged_at: r.loggedAt, date_key: r.dateKey
+    };
+  }
+  function mapRowToRun(r) {
+    return {
+      id: r.id, kind: r.kind || "run", distanceM: Number(r.distance_m) || 0, durationS: Number(r.duration_s) || 0,
+      unit: r.unit || "mi", gps: !!r.gps, loggedAt: r.logged_at, dateKey: r.date_key
+    };
+  }
+  function sbPushRun(r) {
+    if (!sb || !sbUser) return;
+    sb.from("runs").upsert(mapRunToRow(r)).then(function () {}).catch(function () {});
+  }
+  function sbDeleteRun(id) {
+    if (!sb || !sbUser) return;
+    sb.from("runs").delete().eq("id", id).then(function () {}).catch(function () {});
+  }
+  // On sign-in: upload runs logged on this phone, and pull down runs logged elsewhere.
+  function syncLocalRunsToSupabase() {
+    if (!sb || !sbUser) return;
+    sb.from("runs").select("*").eq("user_id", sbUser.id).then(function (res) {
+      var remote = (res && res.data) || [];
+      var localRows = state.runs.map(mapRunToRow);
+      if (localRows.length > 0) {
+        sb.from("runs").upsert(localRows).then(function () {}).catch(function () {});
+      }
+      var localIds = {};
+      state.runs.forEach(function (r) { localIds[r.id] = true; });
+      var missing = remote.filter(function (r) { return !localIds[r.id]; }).map(mapRowToRun);
+      if (missing.length > 0) {
+        state.runs = state.runs.concat(missing);
+        saveRuns();
+        render();
+        renderRunStrip();
+      }
+    }).catch(function () {});
+  }
+
   // =========================================================================
   // Settings: language + theme
   // =========================================================================
@@ -3161,6 +3806,7 @@
     renderRampStatus();
     renderLadderStatus();
     renderSoundChips();
+    renderRunPanel();
     render();
     if (!db) { syncNote.textContent = t("noteLocal"); } else { syncNote.textContent = t("noteSynced"); }
   }
@@ -3284,11 +3930,15 @@
   // =========================================================================
   function init() {
     loadSettings();
+    loadRunPrefs();
+    state.runs = loadRuns();
     applyTranslations();
     renderLangGrid();
     renderThemeGrid();
     state.sets = loadLocal();
     render();
+    try { if (localStorage.getItem("iron-ledger-logmode-v1") === "run") setLogMode("run"); } catch (e) {}
+    restoreLiveRun();
 
     if (window.claude && typeof window.claude.use === "function") {
       window.claude.use("db").then(function (handle) {
